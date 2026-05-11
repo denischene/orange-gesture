@@ -8,8 +8,37 @@
  */
 
 const DIR_CHARS = ["R", "UR", "U", "UL", "L", "DL", "D", "DR"];
+const MIN_SEGMENT = 24;
 
 let modulePromise = null;
+let wasmDisabled = false; // set to true once WASM is known unusable
+
+function jsAngleToDir(dx, dy) {
+  const a = (Math.atan2(-dy, dx) * 180) / Math.PI;
+  const n = (a + 360) % 360;
+  if (n <  22.5 || n >= 337.5) return "R";
+  if (n <  67.5)               return "UR";
+  if (n < 112.5)               return "U";
+  if (n < 157.5)               return "UL";
+  if (n < 202.5)               return "L";
+  if (n < 247.5)               return "DL";
+  if (n < 292.5)               return "D";
+  return "DR";
+}
+
+function recognizeStrokeJS(points) {
+  const tokens = [];
+  let last = null;
+  for (const [x, y] of points) {
+    if (!last) { last = [x, y]; continue; }
+    const dx = x - last[0], dy = y - last[1];
+    if (Math.hypot(dx, dy) < MIN_SEGMENT) continue;
+    const dir = jsAngleToDir(dx, dy);
+    if (tokens[tokens.length - 1] !== dir) tokens.push(dir);
+    last = [x, y];
+  }
+  return tokens.join("");
+}
 
 function instantiate() {
   if (modulePromise) return modulePromise;
@@ -42,17 +71,42 @@ function instantiate() {
 }
 
 export async function recognizeStroke(points) {
-  const wasm = await instantiate();
-  wasm.reset();
-  for (const [x, y] of points) wasm.addPoint(x, y);
+  if (wasmDisabled) return recognizeStrokeJS(points);
 
-  const count = wasm.tokenCount();
-  const ptr   = wasm.bufferPtr();
-  const view  = new Uint8Array(wasm.memory.buffer, ptr, count);
-  let seq = "";
-  for (let i = 0; i < count; i++) seq += DIR_CHARS[view[i]] ?? "";
-  return seq;
+  let wasm;
+  try {
+    wasm = await instantiate();
+  } catch (err) {
+    console.warn("[OGC] WASM unavailable, using JS fallback:", err);
+    wasmDisabled = true;
+    modulePromise = null;
+    return recognizeStrokeJS(points);
+  }
+
+  try {
+    wasm.reset();
+    for (const [x, y] of points) wasm.addPoint(x, y);
+    const count = wasm.tokenCount();
+    const ptr   = wasm.bufferPtr();
+    const view  = new Uint8Array(wasm.memory.buffer, ptr, count);
+    let seq = "";
+    for (let i = 0; i < count; i++) seq += DIR_CHARS[view[i]] ?? "";
+    return seq;
+  } catch (err) {
+    console.warn("[OGC] WASM recognition threw, using JS fallback:", err);
+    wasmDisabled = true;
+    modulePromise = null;
+    return recognizeStrokeJS(points);
+  }
 }
 
 // Warm the module at startup so the first gesture has zero latency.
-export function preload() { instantiate().catch((err) => console.warn("[OGC] wasm preload failed", err)); }
+// If preload fails, mark WASM disabled so the very first stroke skips the
+// retry attempt and goes straight to the JS fallback.
+export function preload() {
+  instantiate().catch((err) => {
+    console.warn("[OGC] wasm preload failed, JS fallback will be used:", err);
+    wasmDisabled = true;
+    modulePromise = null;
+  });
+}
