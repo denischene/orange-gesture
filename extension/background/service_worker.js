@@ -1,7 +1,36 @@
 /* Background service worker — replaces the legacy XPCOM component + OGC_ComponentLoader.
  * Receives recognized gestures from content scripts and dispatches to the
  * appropriate browser.* API.
+ *
+ * Gesture recognition runs natively here via a C++ engine compiled to
+ * WebAssembly (see ../native/ogc_recognizer.cpp). The module is loaded with
+ * WebAssembly.instantiateStreaming the first time a stroke arrives — and
+ * proactively at startup — so dispatch latency stays sub-millisecond.
  */
+
+import { recognizeStroke, preload } from "./wasm_loader.js";
+
+// Background vocabulary mirror — content scripts use the same map for live
+// tooltip preview, but action dispatch is decided here from the WASM output.
+// Mirrors extension/lib/vocabulary.js. Service-worker modules can't share the
+// IIFE-style global from the content-script bundle, so we duplicate it here.
+const OGC_VOCABULARY = {
+  "L":   "tab.back",
+  "R":   "tab.forward",
+  "U":   "tab.scrollTop",
+  "D":   "tab.scrollBottom",
+  "DR":  "tab.close",
+  "DL":  "tab.reopen",
+  "UR":  "tab.next",
+  "UL":  "tab.prev",
+  "UD":  "tab.reload",
+  "RL":  "tab.duplicate",
+  "LR":  "window.new",
+  "DU":  "page.top",
+  "RUL": "history.open",
+  "LDR": "bookmarks.open",
+  "URD": "downloads.open"
+};
 
 const DEFAULT_SETTINGS = {
   enabled: true,
@@ -14,7 +43,10 @@ const DEFAULT_SETTINGS = {
 browser.runtime.onInstalled.addListener(async () => {
   const { settings } = await browser.storage.local.get("settings");
   if (!settings) await browser.storage.local.set({ settings: DEFAULT_SETTINGS });
+  preload();
 });
+browser.runtime.onStartup?.addListener(() => preload());
+preload();
 
 const ACTIONS = {
   "tab.back":         async (tab) => browser.tabs.goBack(tab.id).catch(() => {}),
@@ -56,12 +88,31 @@ async function scroll(tab, where) {
 }
 
 browser.runtime.onMessage.addListener(async (msg, sender) => {
-  if (msg?.type !== "ogc.action") return;
   const tab = sender.tab;
   if (!tab) return;
-  const handler = ACTIONS[msg.action];
+
+  let action = null;
+  let sequence = "";
+
+  if (msg?.type === "ogc.stroke" && Array.isArray(msg.points)) {
+    try {
+      sequence = await recognizeStroke(msg.points);
+      action = OGC_VOCABULARY[sequence] ?? null;
+    } catch (err) {
+      console.warn("[OGC] wasm recognition failed", err);
+      return;
+    }
+  } else if (msg?.type === "ogc.action") {
+    action = msg.action;
+    sequence = msg.sequence ?? "";
+  } else {
+    return;
+  }
+
+  if (!action) return;
+  const handler = ACTIONS[action];
   if (handler) {
     try { await handler(tab); }
-    catch (err) { console.warn("[OGC] action failed", msg.action, err); }
+    catch (err) { console.warn("[OGC] action failed", action, sequence, err); }
   }
 });
