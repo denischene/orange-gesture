@@ -4,11 +4,11 @@ export const Route = createFileRoute("/tutorials")({
   component: Tutorials,
   head: () => ({
     meta: [
-      { title: "Tutoriels — Orange Gesture Control" },
+      { title: "Installation — Orange Gesture Control" },
       {
         name: "description",
         content:
-          "Tutoriels pratiques pour démarrer avec Orange Gesture Control : installation, premier geste, personnalisation.",
+          "Installation et premiers pas avec Orange Gesture Control sur Firefox.",
       },
     ],
   }),
@@ -69,7 +69,7 @@ function Tutorials() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
-        Tutoriels
+        Installation
       </h1>
       <p className="text-muted-foreground mb-10">
         Quatre étapes pour adopter la navigation gestuelle.
