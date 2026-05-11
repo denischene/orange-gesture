@@ -4,6 +4,7 @@
  */
 (function () {
   const recognizer = new OGC_Recognizer();
+  const points = [];
   let active = false;
   let suppressContext = false;
   let settings = { enabled: true, button: 2, trails: true, tooltips: true };
@@ -20,6 +21,8 @@
     active = true;
     suppressContext = false;
     recognizer.reset();
+    points.length = 0;
+    points.push([e.clientX, e.clientY]);
     recognizer.addPoint(e.clientX, e.clientY);
     if (settings.trails) window.OGC_Trails?.start(e.clientX, e.clientY);
     window.OGC_Tooltips?.show("");
@@ -27,6 +30,7 @@
 
   function onMove(e) {
     if (!active) return;
+    points.push([e.clientX, e.clientY]);
     recognizer.addPoint(e.clientX, e.clientY);
     if (settings.trails) window.OGC_Trails?.lineTo(e.clientX, e.clientY);
     const seq = recognizer.sequence();
@@ -37,13 +41,13 @@
   function onUp(e) {
     if (!active) return;
     active = false;
-    const seq = recognizer.sequence();
+    const previewSeq = recognizer.sequence();
     if (settings.trails) window.OGC_Trails?.end();
     window.OGC_Tooltips?.hide();
-    if (seq.length > 0) {
+    if (previewSeq.length > 0) {
       suppressContext = true;
-      const action = OGC_VOCABULARY[seq];
-      if (action) browser.runtime.sendMessage({ type: "ogc.action", action, sequence: seq });
+      // Authoritative recognition runs in the background via the WASM engine.
+      browser.runtime.sendMessage({ type: "ogc.stroke", points: points.slice() });
       e.preventDefault();
     }
   }
