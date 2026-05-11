@@ -36,6 +36,8 @@ const ALIASES = {
   "DDLLULU": "tab.prev",
   "UULLDLD": "tab.prev", "UULDLD": "tab.prev",
   "UULLDL": "tab.prev",  "UULLDLL": "tab.prev",
+  // Bas de page — variantes
+  "RDRD": "page.bottom",
   // Nouvel onglet : commence par D + variantes de l'arc suivant
   "DUURRDR": "tab.new", "DUURRDRD": "tab.new",
   "DUURDRD": "tab.new", "DUURRDRR": "tab.new",
@@ -199,7 +201,11 @@ const ACTIONS = {
     return browser.tabs.create({ url });
   },
   "help.toggle":    async () => browser.sidebarAction?.toggle?.(),
-  "tab.new":        async (tab, ctx) => browser.tabs.create({ url: ctx?.linkHref ?? "about:newtab" }),
+  "tab.new":        async (tab, ctx) => {
+    const opts = {};
+    if (ctx?.linkHref) opts.url = ctx.linkHref;
+    return browser.tabs.create(opts);
+  },
   "tab.next":       async (tab) => cycleTab(tab, +1),
   "tab.prev":       async (tab) => cycleTab(tab, -1),
   "tab.close":      async (tab) => browser.tabs.remove(tab.id),
