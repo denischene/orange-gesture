@@ -7,8 +7,10 @@
       :root { --orange: #ff7900; }
       * { box-sizing: border-box; }
       body { font: 13px system-ui, sans-serif; padding: 10px; margin: 0; color: #111; }
-      h1 { color: var(--orange); font-size: 14px; margin: 0 0 4px; }
-      .hint { font-size: 12px; color: #555; margin: 0 0 12px; }
+      header { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; }
+      header img { width: 28px; height: 28px; }
+      h1 { color: var(--orange); font-size: 14px; margin: 0; }
+      .hint { font-size: 12px; color: #555; margin: 0 0 12px; font-style: italic; }
       .group-title { font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
                      color: #888; margin: 14px 0 6px; }
       .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
@@ -20,13 +22,13 @@
     </style>
   </head>
   <body>
-    <h1>OGC — Aide gestes</h1>
+    <header>
+      <img src="../icons/ogc-32.png" alt="" />
+      <h1>OGC — Aide gestes</h1>
+    </header>
     <p class="hint">Un appui long répète le geste.</p>
     <div id="root"></div>
     <script>
-      const URL = (n) => browser.runtime.getURL("../assets/img/" + n + ".png");
-      // We don't ship images inside the extension; reuse remote site assets via the active tab.
-      // Fallback: render text-only labels when icons are missing.
       const GROUPS = [
         { title: "", items: [
           { img: "interogation", lbl: "Aide" }
@@ -71,7 +73,7 @@
         for (const it of g.items) {
           const c = document.createElement("div"); c.className = "cell";
           const img = document.createElement("img");
-          img.src = browser.runtime.getURL("img/" + it.img + ".png");
+          img.src = "../img/" + it.img + ".png";
           img.alt = "";
           img.onerror = () => { img.style.display = "none"; };
           const l = document.createElement("div"); l.className = "lbl"; l.textContent = it.lbl;

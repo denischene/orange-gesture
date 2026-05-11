@@ -147,39 +147,50 @@
   }
 }
 
-/* OGC memo card — orange dot + label crossfade on hover */
+/* OGC memo card — orange dot + label crossfade on hover.
+ * Cycle: 4s total. 0–50% = short label visible (animation playing).
+ * 50–55% = dot grows at the end of the trace.
+ * 55–95% = long-press label visible (≈ 2s steady).
+ */
 .ogc-card .ogc-dot {
   opacity: 0;
   transform-origin: center;
   transition: opacity .2s ease;
 }
 .ogc-card:hover .ogc-dot {
-  animation: ogc-dot-pulse 1.6s ease-in-out infinite;
+  animation: ogc-dot-pulse 4s ease-in-out infinite;
 }
 .ogc-card .ogc-label-long {
   opacity: 0;
 }
 .ogc-card:hover .ogc-label-long {
-  animation: ogc-label-long 1.6s ease-in-out infinite;
+  animation: ogc-label-long 4s ease-in-out infinite;
 }
 .ogc-card:hover .ogc-label-base {
-  animation: ogc-label-base 1.6s ease-in-out infinite;
+  animation: ogc-label-base 4s ease-in-out infinite;
 }
 @keyframes ogc-dot-pulse {
-  0%, 55% { opacity: 0; transform: scale(0); }
-  65%     { opacity: 1; transform: scale(1.6); }
-  80%     { opacity: 1; transform: scale(1.15); }
-  100%    { opacity: 0; transform: scale(1.15); }
+  0%, 45% { opacity: 0; transform: scale(0); }
+  55%     { opacity: 1; transform: scale(1.8); }
+  65%, 92%{ opacity: 1; transform: scale(1.2); }
+  100%    { opacity: 0; transform: scale(1.2); }
 }
 @keyframes ogc-label-base {
-  0%, 60% { opacity: 1; }
-  65%, 95% { opacity: 0; }
-  100% { opacity: 1; }
+  0%, 50% { opacity: 1; }
+  55%, 95%{ opacity: 0; }
+  100%    { opacity: 1; }
 }
 @keyframes ogc-label-long {
-  0%, 60% { opacity: 0; }
-  65%, 95% { opacity: 1; }
-  100% { opacity: 0; }
+  0%, 50% { opacity: 0; }
+  55%, 95%{ opacity: 1; }
+  100%    { opacity: 0; }
+}
+
+/* SVG path draw-on animation for inline gesture illustrations */
+@keyframes ogc-draw {
+  0%   { stroke-dashoffset: 1; }
+  60%  { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 0; }
 }
 
 /* Active nav link — thick orange underline (overrides .bg-primary on data-status) */

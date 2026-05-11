@@ -20,7 +20,9 @@
     "history",
     "bookmarks",
     "contextMenus",
-    "notifications"
+    "notifications",
+    "clipboardRead",
+    "clipboardWrite"
   ],
   "host_permissions": ["<all_urls>"],
   "background": {

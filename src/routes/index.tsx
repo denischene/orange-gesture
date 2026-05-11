@@ -84,15 +84,28 @@ function Index() {
               </p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-              <div className="aspect-square w-full rounded-xl flex items-center justify-center bg-secondary">
-                <img
-                  src="/img/right_left.gif"
-                  alt="Démonstration d'un geste de souris"
-                  className="max-h-72"
-                />
+              <div className="aspect-square w-full rounded-xl flex items-center justify-center bg-secondary text-foreground">
+                <svg viewBox="0 0 200 140" className="w-3/4 h-3/4">
+                  {/* left→right arch (top-of-arc), then small return */}
+                  <path
+                    d="M30 110 Q100 -20 170 110 L150 90"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    pathLength={1}
+                    style={{
+                      strokeDasharray: 1,
+                      strokeDashoffset: 1,
+                      animation: "ogc-draw 4s ease-in-out infinite",
+                    }}
+                  />
+                  <circle cx="170" cy="110" r="6" fill="var(--primary)" />
+                </svg>
               </div>
               <p className="mt-3 text-center text-sm text-muted-foreground">
-                Geste droite→gauche : page précédente
+                Geste arc de cercle gauche → droite : Onglet suivant
               </p>
             </div>
           </div>

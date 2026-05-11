@@ -14,7 +14,10 @@ export const Route = createFileRoute("/memo")({
   }),
 });
 
-type DotPos = "top" | "bottom" | "left" | "right" | "top-right" | "top-left" | "bottom-right" | "bottom-left";
+type DotPos =
+  | "top" | "bottom" | "left" | "right"
+  | "top-right" | "top-left" | "bottom-right" | "bottom-left"
+  | "none";
 
 type Gesture = {
   name: string;
@@ -23,32 +26,32 @@ type Gesture = {
   sequence: string;
   dot: DotPos;
   note?: string;
+  custom?: "home" | "newtab"; // inline SVG instead of png/gif
 };
 
-// Reorganised gesture vocabulary — see user spec.
 const GESTURES: Gesture[] = [
-  { name: "undo",                  title: "Page d'accueil du site",        longTitle: "Page d'accueil du navigateur", sequence: "LURDR",        dot: "right" },
+  { name: "undo",                  title: "Page d'accueil du site",        longTitle: "Page d'accueil du navigateur", sequence: "LURDR",        dot: "bottom-right", custom: "home" },
   { name: "bottom_top",            title: "Haut",                          longTitle: "Haut répété",                  sequence: "U",            dot: "top",    note: "Sur sélection : Copier" },
   { name: "top_bottom",            title: "Bas",                           longTitle: "Bas répété",                   sequence: "D",            dot: "bottom", note: "Dans un champ : Coller" },
   { name: "magnifying_glass",      title: "Rechercher sur internet",       longTitle: "Rechercher dans la page",      sequence: "URUURRDLDDL",  dot: "bottom-left" },
-  { name: "interogation",          title: "Aide",                          sequence: "UURRDDLDD",                                              dot: "bottom" },
-  { name: "left_right_top",        title: "Aller en haut de page",         sequence: "RU",                                                     dot: "top-right" },
-  { name: "left_right_bottom",     title: "Aller en bas de page",          sequence: "RD",                                                     dot: "bottom-right" },
-  { name: "clockwise_circle",      title: "Zoomer",                        longTitle: "Zoom progressif (+10%)",       sequence: "DRDDLLLUURUR", dot: "right" },
-  { name: "anticlockwise_circle",  title: "Dézoomer",                      longTitle: "Dézoom progressif (−10%)",     sequence: "LDLDDRRULUUL", dot: "left" },
-  { name: "top_down_heart",        title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bottom-right", note: "Sur lien : ouvre le lien" },
+  { name: "interogation",          title: "Aide",                          sequence: "UURRDDLDD",                                              dot: "none" },
+  { name: "left_right_top",        title: "Aller en haut de page",         sequence: "RU",                                                     dot: "none" },
+  { name: "left_right_bottom",     title: "Aller en bas de page",          sequence: "RD",                                                     dot: "none" },
+  { name: "clockwise_circle",      title: "Zoomer",                        longTitle: "Zoom progressif (+10%)",       sequence: "DRDDLLLUURUR", dot: "top-right" },
+  { name: "anticlockwise_circle",  title: "Dézoomer",                      longTitle: "Dézoom progressif (−10%)",     sequence: "LDLDDRRULUUL", dot: "top-left" },
+  { name: "top_down_heart",        title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bottom-right", note: "Sur lien : ouvre le lien", custom: "newtab" },
   { name: "left_right_arch",       title: "Onglet suivant",                longTitle: "Onglet suivant répété",        sequence: "URRDRD",       dot: "bottom-right" },
-  { name: "right_left_arch",       title: "Onglet précédent",              longTitle: "Onglet précédent répété",      sequence: "DDLLULU",      dot: "top-left" },
-  { name: "alpha",                 title: "Fermer",                        longTitle: "Fermer répété",                sequence: "α",            dot: "right" },
+  { name: "right_left_arch",       title: "Onglet précédent",              longTitle: "Onglet précédent répété",      sequence: "DDLLULU",      dot: "bottom-left" },
+  { name: "alpha",                 title: "Fermer",                        longTitle: "Fermer répété",                sequence: "DRULDR",       dot: "right" },
   { name: "bottom_left_top_right", title: "Agrandir fenêtre",              longTitle: "État fenêtre suivant",         sequence: "UR",           dot: "top-right" },
   { name: "top_right_bottom_left", title: "Réduire fenêtre",               longTitle: "État fenêtre précédent",       sequence: "DL",           dot: "bottom-left" },
-  { name: "left_right_heart",      title: "Ajouter aux favoris",           sequence: "—",                                                      dot: "right" },
-  { name: "vertical_ribbon",       title: "Enregistrer sous…",             sequence: "DDRURUULL",                                              dot: "left" },
+  { name: "left_right_heart",      title: "Ajouter aux favoris",           sequence: "LRULRD",                                                 dot: "right" },
+  { name: "vertical_ribbon",       title: "Enregistrer sous…",             sequence: "DDRURUULL",                                              dot: "none" },
   { name: "right_left",            title: "Page précédente",               longTitle: "Page précédente répétée",      sequence: "L",            dot: "left" },
   { name: "left_right",            title: "Page suivante",                 longTitle: "Page suivante répétée",        sequence: "R",            dot: "right" },
 ];
 
-const DOT_POS: Record<DotPos, React.CSSProperties> = {
+const DOT_POS: Record<Exclude<DotPos, "none">, React.CSSProperties> = {
   top:           { top: "4%",  left: "50%",  transform: "translate(-50%, 0)" },
   bottom:        { bottom: "4%", left: "50%", transform: "translate(-50%, 0)" },
   left:          { top: "50%", left: "4%",  transform: "translate(0, -50%)" },
@@ -59,29 +62,126 @@ const DOT_POS: Record<DotPos, React.CSSProperties> = {
   "bottom-left": { bottom: "6%", left: "6%" },
 };
 
+/* Custom SVG illustrations for redrawn gestures.
+ * For "home": horizontal left -> diagonal up-right -> diagonal down-right.
+ * For "newtab": h-shape (down, up, right-down).
+ * The animated variant draws the path on hover.
+ */
+function HomeIcon({ animated }: { animated: boolean }) {
+  // path: start right side, go LEFT, then UP-RIGHT, then DOWN-RIGHT
+  const d = "M88 56 L24 56 L60 20 L96 56";
+  return (
+    <svg viewBox="0 0 112 80" className="h-28 w-28 absolute inset-0 m-auto">
+      <path
+        d={d}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pathLength={1}
+        style={
+          animated
+            ? {
+                strokeDasharray: 1,
+                strokeDashoffset: 1,
+                animation: "ogc-draw 2s ease-in-out infinite",
+              }
+            : undefined
+        }
+      />
+      {/* arrowhead on the down-right end */}
+      <path
+        d="M96 56 L88 50 M96 56 L90 64"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function NewTabIcon({ animated }: { animated: boolean }) {
+  // h-shape: vertical down on left, then up to mid, then arc down-right
+  const d = "M28 12 L28 68 M28 40 Q56 12 84 40 L84 68";
+  return (
+    <svg viewBox="0 0 112 80" className="h-28 w-28 absolute inset-0 m-auto">
+      <path
+        d={d}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pathLength={1}
+        style={
+          animated
+            ? {
+                strokeDasharray: 1,
+                strokeDashoffset: 1,
+                animation: "ogc-draw 2s ease-in-out infinite",
+              }
+            : undefined
+        }
+      />
+      <path
+        d="M84 68 L78 62 M84 68 L78 74"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function GestureCard({ g }: { g: Gesture }) {
   return (
     <figure className="ogc-card group rounded-xl border border-border bg-card p-4 flex flex-col items-center text-center hover:shadow-md transition">
-      <div className="relative h-28 w-28">
-        <img
-          src={`/img/${g.name}.png`}
-          alt={g.title}
-          className="absolute inset-0 h-28 w-28 object-contain group-hover:opacity-0 transition-opacity"
-          loading="lazy"
-        />
-        <img
-          src={`/img/${g.name}.gif`}
-          alt=""
-          aria-hidden
-          className="absolute inset-0 h-28 w-28 object-contain opacity-0 group-hover:opacity-100 transition-opacity"
-          loading="lazy"
-        />
-        {/* Orange dot — placed at the arrow extremity, animated on hover */}
-        <span
-          aria-hidden
-          className="ogc-dot absolute h-3 w-3 rounded-full bg-primary shadow-md"
-          style={DOT_POS[g.dot]}
-        />
+      <div className="relative h-28 w-28 text-foreground">
+        {g.custom === "home" ? (
+          <>
+            <span className="absolute inset-0 group-hover:opacity-0 transition-opacity">
+              <HomeIcon animated={false} />
+            </span>
+            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <HomeIcon animated />
+            </span>
+          </>
+        ) : g.custom === "newtab" ? (
+          <>
+            <span className="absolute inset-0 group-hover:opacity-0 transition-opacity">
+              <NewTabIcon animated={false} />
+            </span>
+            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <NewTabIcon animated />
+            </span>
+          </>
+        ) : (
+          <>
+            <img
+              src={`/img/${g.name}.png`}
+              alt={g.title}
+              className="absolute inset-0 h-28 w-28 object-contain group-hover:opacity-0 transition-opacity"
+              loading="lazy"
+            />
+            <img
+              src={`/img/${g.name}.gif`}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 h-28 w-28 object-contain opacity-0 group-hover:opacity-100 transition-opacity"
+              loading="lazy"
+            />
+          </>
+        )}
+        {g.dot !== "none" && (
+          <span
+            aria-hidden
+            className="ogc-dot absolute h-3 w-3 rounded-full bg-primary shadow-md"
+            style={DOT_POS[g.dot]}
+          />
+        )}
       </div>
       <figcaption className="mt-3 min-h-[2.5rem] text-sm font-medium relative w-full">
         <span className="ogc-label-base block">{g.title}</span>
@@ -110,7 +210,7 @@ function Memo() {
         <p className="mt-2 text-muted-foreground max-w-2xl">
           Survolez une vignette pour voir l'animation. Le point orange marque la
           fin du tracé&nbsp;: lorsqu'il grossit, l'appui long s'active et la
-          fonction associée remplace la fonction principale.
+          fonction associée remplace la fonction principale pendant 2&nbsp;secondes.
         </p>
       </header>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
