@@ -66,5 +66,11 @@
     "32": "icons/ogc-32.png",
     "48": "icons/ogc-48.png",
     "128": "icons/ogc-128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["wasm/ogc_recognizer.wasm"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
