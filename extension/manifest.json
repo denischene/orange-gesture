@@ -22,7 +22,9 @@
     "contextMenus",
     "notifications",
     "clipboardRead",
-    "clipboardWrite"
+    "clipboardWrite",
+    "downloads",
+    "find"
   ],
   "host_permissions": ["<all_urls>"],
   "background": {

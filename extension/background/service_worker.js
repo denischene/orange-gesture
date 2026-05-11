@@ -27,6 +27,41 @@ const OGC_VOCABULARY = {
   "DDRURUULL":    { action: "page.saveAs",      label: "Enregistrer sous…" }
 };
 
+// Accept user-drawn variations: alias many sequences to the canonical action.
+const ALIASES = {
+  // Onglet suivant — arc gauche -> droite
+  "URRDRD": "tab.next", "UURRDR": "tab.next", "UURRDRD": "tab.next",
+  "UURDRD": "tab.next", "UURRDRR": "tab.next",
+  // Onglet précédent — arc droite -> gauche
+  "DDLLULU": "tab.prev",
+  "UULLDLD": "tab.prev", "UULDLD": "tab.prev",
+  "UULLDL": "tab.prev",  "UULLDLL": "tab.prev",
+  // Nouvel onglet : commence par D + variantes de l'arc suivant
+  "DUURRDR": "tab.new", "DUURRDRD": "tab.new",
+  "DUURDRD": "tab.new", "DUURRDRR": "tab.new",
+  // Fermer (alpha)
+  "DRULDR": "tab.close",
+  "DLULLUURRDR": "tab.close", "DLLULLUURDR": "tab.close",
+  "DLLULLUURRDR": "tab.close", "DDLLULLUURRDR": "tab.close",
+  // Ajouter aux favoris
+  "LRULRD": "bookmarks.add",
+  "RURRDR": "bookmarks.add", "RURDDR": "bookmarks.add",
+  "RURDLDR": "bookmarks.add", "RURDR": "bookmarks.add",
+  "RURDDRR": "bookmarks.add", "RURUDDRR": "bookmarks.add",
+  "URUDDRR": "bookmarks.add",
+  // Enregistrer sous
+  "DDRURUULL": "page.saveAs",
+  "DDRRURULLL": "page.saveAs", "DDRRURULL": "page.saveAs",
+  "DDRRURUUUL": "page.saveAs"
+};
+for (const [seq, action] of Object.entries(ALIASES)) {
+  if (!OGC_VOCABULARY[seq]) {
+    // copy label/longLabel/repeat from canonical entry for this action
+    const canonical = Object.values(OGC_VOCABULARY).find((v) => v.action === action);
+    if (canonical) OGC_VOCABULARY[seq] = { ...canonical };
+  }
+}
+
 const DEFAULT_SETTINGS = {
   enabled: true, button: 2, trails: true, tooltips: true, sensitivity: 24
 };
@@ -125,10 +160,37 @@ const ACTIONS = {
   },
   "search.web":     async (tab, ctx) => {
     if (ctx?.longPress) {
-      return browser.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => window.find ? window.find("", false, false, true, false, true, false) : null
-      });
+      // "Rechercher dans la page" : utilise l'API browser.find pour
+      // rechercher la sélection courante (ou le presse-papiers en repli)
+      // et surligne les résultats dans l'onglet actif.
+      let query = ctx?.selection?.trim() || "";
+      if (!query) {
+        try {
+          const r = await browser.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => (window.getSelection?.()?.toString() || "").trim()
+          });
+          query = r?.[0]?.result || "";
+        } catch {}
+      }
+      if (!query) {
+        try { query = (await navigator.clipboard.readText())?.trim() || ""; }
+        catch {}
+      }
+      if (!query) {
+        // Pas de requête : afficher une notification d'aide.
+        return browser.notifications?.create?.({
+          type: "basic",
+          iconUrl: "icons/ogc-48.png",
+          title: "Rechercher dans la page",
+          message: "Sélectionnez du texte avant l'appui long, ou utilisez Ctrl+F."
+        });
+      }
+      try {
+        await browser.find.find(query, { tabId: tab.id, caseSensitive: false });
+        await browser.find.highlightResults({ tabId: tab.id });
+      } catch (e) { console.warn("[OGC] find failed", e); }
+      return;
     }
     const q = ctx?.selection?.trim();
     const url = q
@@ -148,7 +210,25 @@ const ACTIONS = {
   "bookmarks.add":  async (tab) => browser.bookmarks.create({ title: tab.title, url: tab.url }),
   "page.saveAs":    async (tab, ctx) => {
     const url = ctx?.linkHref ?? ctx?.imageSrc ?? tab.url;
-    return browser.downloads.download({ url, saveAs: true });
+    if (!url || /^(about:|moz-extension:|chrome:)/i.test(url)) {
+      return browser.notifications?.create?.({
+        type: "basic",
+        iconUrl: "icons/ogc-48.png",
+        title: "Enregistrer sous…",
+        message: "Cette page n'est pas téléchargeable."
+      });
+    }
+    try {
+      await browser.downloads.download({ url, saveAs: true });
+    } catch (e) {
+      console.warn("[OGC] download failed", e);
+      browser.notifications?.create?.({
+        type: "basic",
+        iconUrl: "icons/ogc-48.png",
+        title: "Enregistrer sous…",
+        message: "Téléchargement impossible : " + (e?.message || e)
+      });
+    }
   }
 };
 
