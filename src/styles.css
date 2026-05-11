@@ -146,3 +146,47 @@
     color: var(--color-foreground);
   }
 }
+
+/* OGC memo card — orange dot + label crossfade on hover */
+.ogc-card .ogc-dot {
+  opacity: 0;
+  transform-origin: center;
+  transition: opacity .2s ease;
+}
+.ogc-card:hover .ogc-dot {
+  animation: ogc-dot-pulse 1.6s ease-in-out infinite;
+}
+.ogc-card .ogc-label-long {
+  opacity: 0;
+}
+.ogc-card:hover .ogc-label-long {
+  animation: ogc-label-long 1.6s ease-in-out infinite;
+}
+.ogc-card:hover .ogc-label-base {
+  animation: ogc-label-base 1.6s ease-in-out infinite;
+}
+@keyframes ogc-dot-pulse {
+  0%, 55% { opacity: 0; transform: scale(0); }
+  65%     { opacity: 1; transform: scale(1.6); }
+  80%     { opacity: 1; transform: scale(1.15); }
+  100%    { opacity: 0; transform: scale(1.15); }
+}
+@keyframes ogc-label-base {
+  0%, 60% { opacity: 1; }
+  65%, 95% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes ogc-label-long {
+  0%, 60% { opacity: 0; }
+  65%, 95% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Active nav link — thick orange underline (overrides .bg-primary on data-status) */
+.ogc-nav-link[data-status="active"] {
+  background: transparent !important;
+  color: var(--foreground) !important;
+  border-bottom: 4px solid var(--primary);
+  border-radius: 0;
+  padding-bottom: calc(0.375rem - 4px);
+}

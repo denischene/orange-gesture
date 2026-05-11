@@ -14,10 +14,10 @@ export function SiteLayout() {
       <header className="border-b border-border bg-card/80 backdrop-blur sticky top-0 z-40">
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2 group">
-            <span
-              className="inline-block h-7 w-7 rounded-sm"
-              style={{ background: "var(--gradient-primary)" }}
-              aria-hidden
+            <img
+              src="/img/logo.png"
+              alt="Orange Gesture Control"
+              className="h-9 w-9 object-contain"
             />
             <span className="font-semibold tracking-tight text-lg">
               Orange Gesture<span className="text-primary"> Control</span>
@@ -25,17 +25,12 @@ export function SiteLayout() {
           </Link>
           <nav className="flex flex-wrap items-center gap-1 text-sm">
             {NAV.map((n) => {
-              const active = pathname === n.to;
               return (
                 <Link
                   key={n.to}
                   to={n.to}
-                  className={
-                    "px-3 py-1.5 rounded-md transition-colors " +
-                    (active
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-accent hover:text-accent-foreground")
-                  }
+                  activeOptions={{ exact: true }}
+                  className="ogc-nav-link px-3 py-1.5 rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
                   {n.label}
                 </Link>
@@ -44,8 +39,8 @@ export function SiteLayout() {
             <a
               href="/ogc.xpi"
               download
-              className="ml-2 px-3 py-1.5 rounded-md text-primary-foreground font-medium text-sm shadow-sm hover:opacity-90 transition"
-              style={{ background: "var(--gradient-primary)" }}
+              className="ml-2 px-3 py-1.5 rounded-md font-medium text-sm shadow-sm hover:opacity-90 transition"
+              style={{ background: "var(--primary)", color: "#000" }}
             >
               Télécharger l'extension
             </a>

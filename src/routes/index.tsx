@@ -62,9 +62,10 @@ function Index() {
                 <a
                   href="/ogc.xpi"
                   download
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-md text-primary-foreground font-medium shadow-lg transition hover:opacity-90"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-md font-medium shadow-lg transition hover:opacity-90"
                   style={{
-                    background: "var(--gradient-primary)",
+                    background: "var(--primary)",
+                    color: "#000",
                     boxShadow: "var(--shadow-elegant)",
                   }}
                 >
@@ -91,7 +92,7 @@ function Index() {
                 />
               </div>
               <p className="mt-3 text-center text-sm text-muted-foreground">
-                Geste droite→gauche : onglet précédent
+                Geste droite→gauche : page précédente
               </p>
             </div>
           </div>

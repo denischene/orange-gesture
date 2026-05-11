@@ -7,6 +7,10 @@
   const points = [];
   let active = false;
   let suppressContext = false;
+  let downTarget = null;
+  let lastMoveAt = 0;
+  let longPressTimer = null;
+  let longPressFired = false;
   let settings = { enabled: true, button: 2, trails: true, tooltips: true };
 
   browser.storage.local.get("settings").then((s) => {
@@ -20,10 +24,13 @@
     if (!settings.enabled || e.button !== settings.button) return;
     active = true;
     suppressContext = false;
+    longPressFired = false;
+    downTarget = e.target;
     recognizer.reset();
     points.length = 0;
     points.push([e.clientX, e.clientY]);
     recognizer.addPoint(e.clientX, e.clientY);
+    lastMoveAt = performance.now();
     if (settings.trails) window.OGC_Trails?.start(e.clientX, e.clientY);
     window.OGC_Tooltips?.show("");
   }
@@ -32,6 +39,17 @@
     if (!active) return;
     points.push([e.clientX, e.clientY]);
     recognizer.addPoint(e.clientX, e.clientY);
+    lastMoveAt = performance.now();
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    // If pointer stays still after a recognized sequence, treat as long-press.
+    longPressTimer = setTimeout(() => {
+      if (!active) return;
+      const seq = recognizer.sequence();
+      if (seq.length > 0 && performance.now() - lastMoveAt >= 480) {
+        longPressFired = true;
+        if (settings.tooltips) window.OGC_Tooltips?.show(seq + "  ⏷  long");
+      }
+    }, 500);
     if (settings.trails) window.OGC_Trails?.lineTo(e.clientX, e.clientY);
     const seq = recognizer.sequence();
     const action = OGC_VOCABULARY[seq];
@@ -41,13 +59,29 @@
   function onUp(e) {
     if (!active) return;
     active = false;
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
     const previewSeq = recognizer.sequence();
     if (settings.trails) window.OGC_Trails?.end();
     window.OGC_Tooltips?.hide();
     if (previewSeq.length > 0) {
       suppressContext = true;
-      // Authoritative recognition runs in the background via the WASM engine.
-      browser.runtime.sendMessage({ type: "ogc.stroke", points: points.slice() });
+      const sel = window.getSelection?.()?.toString?.() ?? "";
+      const link = downTarget?.closest?.("a[href]");
+      const img  = downTarget?.closest?.("img[src]");
+      const editable = !!downTarget?.closest?.(
+        "input, textarea, [contenteditable=''], [contenteditable='true']"
+      );
+      browser.runtime.sendMessage({
+        type: "ogc.stroke",
+        points: points.slice(),
+        context: {
+          longPress: longPressFired,
+          selection: sel,
+          linkHref: link?.href ?? null,
+          imageSrc: img?.src ?? null,
+          inEditable: editable
+        }
+      });
       e.preventDefault();
     }
   }

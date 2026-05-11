@@ -69,7 +69,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["wasm/ogc_recognizer.wasm"],
+      "resources": ["wasm/ogc_recognizer.wasm", "img/*.png"],
       "matches": ["<all_urls>"]
     }
   ]
