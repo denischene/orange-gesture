@@ -199,7 +199,11 @@ const ACTIONS = {
     return browser.tabs.create({ url });
   },
   "help.toggle":    async () => browser.sidebarAction?.toggle?.(),
-  "tab.new":        async (tab, ctx) => browser.tabs.create({ url: ctx?.linkHref ?? "about:newtab" }),
+  "tab.new":        async (tab, ctx) => {
+    const opts = {};
+    if (ctx?.linkHref) opts.url = ctx.linkHref;
+    return browser.tabs.create(opts);
+  },
   "tab.next":       async (tab) => cycleTab(tab, +1),
   "tab.prev":       async (tab) => cycleTab(tab, -1),
   "tab.close":      async (tab) => browser.tabs.remove(tab.id),
