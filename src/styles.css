@@ -186,6 +186,13 @@
   100%    { opacity: 0; }
 }
 
+/* SVG path draw-on animation for inline gesture illustrations */
+@keyframes ogc-draw {
+  0%   { stroke-dashoffset: 1; }
+  60%  { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 0; }
+}
+
 /* Active nav link — thick orange underline (overrides .bg-primary on data-status) */
 .ogc-nav-link[data-status="active"] {
   background: transparent !important;
