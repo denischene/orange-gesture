@@ -1,0 +1,9 @@
+{
+  "extDescription": { "message": "Mouse gesture navigation — modern WebExtension port of the legacy Orange Gesture Control extension." },
+  "optTitle": { "message": "Orange Gesture Control — Options" },
+  "optEnable": { "message": "Enable gestures" },
+  "optButton": { "message": "Trigger button" },
+  "optTrails": { "message": "Show gesture trail" },
+  "optTooltips": { "message": "Show tooltips" },
+  "optSensitivity": { "message": "Recognition sensitivity" }
+}

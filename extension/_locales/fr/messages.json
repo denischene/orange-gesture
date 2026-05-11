@@ -1,0 +1,9 @@
+{
+  "extDescription": { "message": "Navigation par gestes de souris — portage moderne de l'extension Orange Gesture Control." },
+  "optTitle": { "message": "Orange Gesture Control — Options" },
+  "optEnable": { "message": "Activer les gestes" },
+  "optButton": { "message": "Bouton déclencheur" },
+  "optTrails": { "message": "Afficher le tracé du geste" },
+  "optTooltips": { "message": "Afficher les info-bulles" },
+  "optSensitivity": { "message": "Sensibilité de reconnaissance" }
+}
