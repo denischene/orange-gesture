@@ -27,6 +27,8 @@ function instantiate() {
       result = await WebAssembly.instantiate(bytes, imports);
     }
     const exp = result.instance.exports;
+    // STANDALONE_WASM "reactor" modules expose _initialize for static ctors.
+    if (typeof exp._initialize === "function") exp._initialize();
     return {
       memory: exp.memory ?? memory,
       reset:        exp.ogc_reset,
