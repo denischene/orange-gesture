@@ -36,6 +36,8 @@ const ALIASES = {
   "DDLLULU": "tab.prev",
   "UULLDLD": "tab.prev", "UULDLD": "tab.prev",
   "UULLDL": "tab.prev",  "UULLDLL": "tab.prev",
+  // Bas de page — variantes
+  "RDRD": "page.bottom",
   // Nouvel onglet : commence par D + variantes de l'arc suivant
   "DUURRDR": "tab.new", "DUURRDRD": "tab.new",
   "DUURDRD": "tab.new", "DUURRDRR": "tab.new",
