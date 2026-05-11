@@ -1,0 +1,23 @@
+#ogc-trail-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 2147483646;
+  display: none;
+}
+#ogc-tooltip {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.82);
+  color: #ff7900;
+  font: 600 14px/1.2 system-ui, sans-serif;
+  padding: 8px 14px;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 2147483647;
+  display: none;
+}

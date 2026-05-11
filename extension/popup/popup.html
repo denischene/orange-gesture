@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <h1>OGC</h1>
+    <label><input type="checkbox" id="enabled" /> Enabled</label>
+    <button id="open-options">Options…</button>
+    <script src="popup.js"></script>
+  </body>
+</html>
+*** Add File: extension/popup/popup.css
+body { font: 13px system-ui, sans-serif; width: 200px; padding: 12px; }
+h1 { margin: 0 0 8px; color: #ff7900; font-size: 16px; }
+button { margin-top: 8px; width: 100%; }
+*** Add File: extension/popup/popup.js
+const cb = document.getElementById("enabled");
+(async () => {
+  const { settings = {} } = await browser.storage.local.get("settings");
+  cb.checked = settings.enabled !== false;
+})();
+cb.addEventListener("change", async () => {
+  const { settings = {} } = await browser.storage.local.get("settings");
+  await browser.storage.local.set({ settings: { ...settings, enabled: cb.checked } });
+});
+document.getElementById("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());
+*** Add File: extension/sidebar/sidebar.html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { font: 13px system-ui, sans-serif; padding: 12px; }
+      h1 { color: #ff7900; font-size: 14px; }
+      table { width: 100%; border-collapse: collapse; }
+      td { padding: 4px 6px; border-bottom: 1px solid #eee; }
+      td:first-child { font-family: ui-monospace, monospace; color: #ff7900; }
+    </style>
+  </head>
+  <body>
+    <h1>Gesture cheatsheet</h1>
+    <table id="vocab"></table>
+    <script src="../lib/vocabulary.js"></script>
+    <script>
+      const t = document.getElementById("vocab");
+      for (const [seq, action] of Object.entries(OGC_VOCABULARY)) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${seq}</td><td>${action}</td>`;
+        t.appendChild(tr);
+      }
+    </script>
+  </body>
+</html>
+*** Add File: extension/README.md
+# Orange Gesture Control — WebExtension (MV3)
+
+Modern Firefox port of the legacy XUL/XPCOM extension `ogc@orange-ftgroup.com`.
+
+## Structure
+
+```
+extension/
+├── manifest.json              # MV3 manifest (replaces install.rdf + chrome.manifest)
+├── background/
+│   └── service_worker.js      # Action dispatcher (replaces XPCOM component)
+├── content_scripts/
+│   ├── gestures.js            # Pointer capture + sequence dispatch
+│   ├── trails.js              # Canvas overlay (replaces OGC_Trails.js)
+│   ├── tooltips.js            # Floating label (replaces OGC_Tooltips.js)
+│   ├── long_click.js          # Long-click detector (replaces OGC_LongClick.js)
+│   └── ogc.css                # Overlay styles (replaces accessibility CSS)
+├── lib/
+│   ├── recognizer.js          # 8-direction tokenizer (replaces native C++ engine)
+│   └── vocabulary.js          # Sequence → action map (replaces RDF vocabulary)
+├── options/                   # options_ui (replaces OGC_Option.xul)
+├── popup/                     # browser_action popup
+├── sidebar/                   # sidebar_action (replaces OGC_Sidebar.xul)
+└── _locales/{en,fr}/messages.json   # Replaces DTD locales
+```
+
+## Install (temporary, for development)
+
+1. Open `about:debugging#/runtime/this-firefox`
+2. Click **Load Temporary Add-on…**
+3. Select `extension/manifest.json`
+
+## Package
+
+```bash
+cd extension && zip -r ../ogc.xpi .
+```
+
+## Known limitations vs. legacy version
+
+- Gestures cannot run on `about:`, `addons.mozilla.org`, or `view-source:` pages (browser policy).
+- The native C++ recognizer was replaced by an 8-direction JS tokenizer; for 1:1 stroke matching, port the original engine to WebAssembly.
+- `nsIPrefBranch` preferences are migrated to `browser.storage.local` (one-time migration not included).
+- Right-button gesture suppresses the context menu only when a non-empty sequence is recognized.
