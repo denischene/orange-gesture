@@ -160,10 +160,37 @@ const ACTIONS = {
   },
   "search.web":     async (tab, ctx) => {
     if (ctx?.longPress) {
-      return browser.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => window.find ? window.find("", false, false, true, false, true, false) : null
-      });
+      // "Rechercher dans la page" : utilise l'API browser.find pour
+      // rechercher la sélection courante (ou le presse-papiers en repli)
+      // et surligne les résultats dans l'onglet actif.
+      let query = ctx?.selection?.trim() || "";
+      if (!query) {
+        try {
+          const r = await browser.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => (window.getSelection?.()?.toString() || "").trim()
+          });
+          query = r?.[0]?.result || "";
+        } catch {}
+      }
+      if (!query) {
+        try { query = (await navigator.clipboard.readText())?.trim() || ""; }
+        catch {}
+      }
+      if (!query) {
+        // Pas de requête : afficher une notification d'aide.
+        return browser.notifications?.create?.({
+          type: "basic",
+          iconUrl: "icons/ogc-48.png",
+          title: "Rechercher dans la page",
+          message: "Sélectionnez du texte avant l'appui long, ou utilisez Ctrl+F."
+        });
+      }
+      try {
+        await browser.find.find(query, { tabId: tab.id, caseSensitive: false });
+        await browser.find.highlightResults({ tabId: tab.id });
+      } catch (e) { console.warn("[OGC] find failed", e); }
+      return;
     }
     const q = ctx?.selection?.trim();
     const url = q
@@ -183,7 +210,25 @@ const ACTIONS = {
   "bookmarks.add":  async (tab) => browser.bookmarks.create({ title: tab.title, url: tab.url }),
   "page.saveAs":    async (tab, ctx) => {
     const url = ctx?.linkHref ?? ctx?.imageSrc ?? tab.url;
-    return browser.downloads.download({ url, saveAs: true });
+    if (!url || /^(about:|moz-extension:|chrome:)/i.test(url)) {
+      return browser.notifications?.create?.({
+        type: "basic",
+        iconUrl: "icons/ogc-48.png",
+        title: "Enregistrer sous…",
+        message: "Cette page n'est pas téléchargeable."
+      });
+    }
+    try {
+      await browser.downloads.download({ url, saveAs: true });
+    } catch (e) {
+      console.warn("[OGC] download failed", e);
+      browser.notifications?.create?.({
+        type: "basic",
+        iconUrl: "icons/ogc-48.png",
+        title: "Enregistrer sous…",
+        message: "Téléchargement impossible : " + (e?.message || e)
+      });
+    }
   }
 };
 
