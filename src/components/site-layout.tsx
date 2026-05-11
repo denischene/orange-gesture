@@ -4,7 +4,7 @@ const NAV = [
   { to: "/", label: "Accueil" },
   { to: "/memo", label: "Mémo des gestes" },
   { to: "/help", label: "Aide" },
-  { to: "/tutorials", label: "Tutoriels" },
+  { to: "/tutorials", label: "Installation" },
 ] as const;
 
 export function SiteLayout() {
