@@ -3,6 +3,8 @@
  * Ported from the legacy OGC RDF vocabulary; extend freely from the options page.
  */
 (function (root) {
+  // Mirror of the canonical map (background owns dispatch + fuzzy matching).
+  // Kept here for content-script tooltips / options page display.
   const OGC_VOCABULARY = {
     // Page navigation (history)
     "L":           "page.back",
