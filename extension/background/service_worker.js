@@ -27,6 +27,41 @@ const OGC_VOCABULARY = {
   "DDRURUULL":    { action: "page.saveAs",      label: "Enregistrer sous…" }
 };
 
+// Accept user-drawn variations: alias many sequences to the canonical action.
+const ALIASES = {
+  // Onglet suivant — arc gauche -> droite
+  "URRDRD": "tab.next", "UURRDR": "tab.next", "UURRDRD": "tab.next",
+  "UURDRD": "tab.next", "UURRDRR": "tab.next",
+  // Onglet précédent — arc droite -> gauche
+  "DDLLULU": "tab.prev",
+  "UULLDLD": "tab.prev", "UULDLD": "tab.prev",
+  "UULLDL": "tab.prev",  "UULLDLL": "tab.prev",
+  // Nouvel onglet : commence par D + variantes de l'arc suivant
+  "DUURRDR": "tab.new", "DUURRDRD": "tab.new",
+  "DUURDRD": "tab.new", "DUURRDRR": "tab.new",
+  // Fermer (alpha)
+  "DRULDR": "tab.close",
+  "DLULLUURRDR": "tab.close", "DLLULLUURDR": "tab.close",
+  "DLLULLUURRDR": "tab.close", "DDLLULLUURRDR": "tab.close",
+  // Ajouter aux favoris
+  "LRULRD": "bookmarks.add",
+  "RURRDR": "bookmarks.add", "RURDDR": "bookmarks.add",
+  "RURDLDR": "bookmarks.add", "RURDR": "bookmarks.add",
+  "RURDDRR": "bookmarks.add", "RURUDDRR": "bookmarks.add",
+  "URUDDRR": "bookmarks.add",
+  // Enregistrer sous
+  "DDRURUULL": "page.saveAs",
+  "DDRRURULLL": "page.saveAs", "DDRRURULL": "page.saveAs",
+  "DDRRURUUUL": "page.saveAs"
+};
+for (const [seq, action] of Object.entries(ALIASES)) {
+  if (!OGC_VOCABULARY[seq]) {
+    // copy label/longLabel/repeat from canonical entry for this action
+    const canonical = Object.values(OGC_VOCABULARY).find((v) => v.action === action);
+    if (canonical) OGC_VOCABULARY[seq] = { ...canonical };
+  }
+}
+
 const DEFAULT_SETTINGS = {
   enabled: true, button: 2, trails: true, tooltips: true, sensitivity: 24
 };
