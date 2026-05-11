@@ -8,3 +8,5 @@ cb.addEventListener("change", async () => {
   await browser.storage.local.set({ settings: { ...settings, enabled: cb.checked } });
 });
 document.getElementById("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());
+const sb = document.getElementById("open-sidebar");
+if (sb) sb.addEventListener("click", () => browser.sidebarAction?.open?.());
