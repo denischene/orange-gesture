@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>OGC — Aide gestes</title>
+    <style>
+      :root { --orange: #ff7900; }
+      * { box-sizing: border-box; }
+      body { font: 13px system-ui, sans-serif; padding: 10px; margin: 0; color: #111; }
+      header { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; }
+      header img { width: 28px; height: 28px; }
+      h1 { color: var(--orange); font-size: 14px; margin: 0; }
+      .hint { font-size: 12px; color: #555; margin: 0 0 12px; font-style: italic; }
+      .group-title { font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+                     color: #888; margin: 14px 0 6px; }
+      .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+      .cell { display: flex; flex-direction: column; align-items: center;
+              padding: 6px 4px; border: 1px solid #eee; border-radius: 6px;
+              background: #fafafa; }
+      .cell img { width: 44px; height: 44px; object-fit: contain; }
+      .cell .lbl { font-size: 11px; margin-top: 4px; text-align: center; line-height: 1.2; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <img src="../icons/ogc-32.png" alt="" />
+      <h1>OGC — Aide gestes</h1>
+    </header>
+    <p class="hint">Un appui long répète le geste.</p>
+    <div id="root"></div>
+    <script>
+      const GROUPS = [
+        { title: "", items: [
+          { img: "interogation", lbl: "Aide" }
+        ]},
+        { title: "Sélection", items: [
+          { img: "top_bottom",  lbl: "Descendre / Coller" },
+          { img: "bottom_top",  lbl: "Monter / Copier" }
+        ]},
+        { title: "Page", items: [
+          { img: "left_right_bottom", lbl: "Bas" },
+          { img: "left_right_top",    lbl: "Haut" },
+          { img: "right_left",        lbl: "Précédente" },
+          { img: "left_right",        lbl: "Suivante" },
+          { img: "undo",              lbl: "Accueil" }
+        ]},
+        { title: "Fenêtre", items: [
+          { img: "clockwise_circle",     lbl: "Zoom +" },
+          { img: "anticlockwise_circle", lbl: "Zoom −" },
+          { img: "bottom_left_top_right",lbl: "Agrandir" },
+          { img: "top_right_bottom_left",lbl: "Réduire" }
+        ]},
+        { title: "Onglet", items: [
+          { img: "top_down_heart",  lbl: "Créer" },
+          { img: "left_right_arch", lbl: "Suivant" },
+          { img: "right_left_arch", lbl: "Précédent" },
+          { img: "alpha",           lbl: "Fermer" }
+        ]},
+        { title: "Favoris / Sauvegarde", items: [
+          { img: "left_right_heart", lbl: "Ajouter Favoris" },
+          { img: "vertical_ribbon",  lbl: "Enregistrer sous…" }
+        ]}
+      ];
+      const root = document.getElementById("root");
+      for (const g of GROUPS) {
+        if (g.title) {
+          const h = document.createElement("div");
+          h.className = "group-title"; h.textContent = g.title;
+          root.appendChild(h);
+        }
+        const grid = document.createElement("div");
+        grid.className = "grid";
+        for (const it of g.items) {
+          const c = document.createElement("div"); c.className = "cell";
+          const img = document.createElement("img");
+          img.src = "../img/" + it.img + ".png";
+          img.alt = "";
+          img.onerror = () => { img.style.display = "none"; };
+          const l = document.createElement("div"); l.className = "lbl"; l.textContent = it.lbl;
+          c.appendChild(img); c.appendChild(l); grid.appendChild(c);
+        }
+        root.appendChild(grid);
+      }
+    </script>
+  </body>
+</html>
