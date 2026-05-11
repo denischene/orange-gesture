@@ -12,21 +12,24 @@ import { recognizeStroke, preload } from "./wasm_loader.js";
 
 // Background vocabulary mirror — content scripts use the same map for live
 // tooltip preview, but action dispatch is decided here from the WASM output.
+// Mirrors extension/lib/vocabulary.js. Service-worker modules can't share the
+// IIFE-style global from the content-script bundle, so we duplicate it here.
 const OGC_VOCABULARY = {
-  "L":  "tab.back",
-  "R":  "tab.forward",
-  "U":  "page.top",
-  "D":  "tab.scrollBottom",
-  "DR": "tab.close",
-  "UL": "tab.reopen",
-  "UR": "window.new",
-  "DL": "tab.reload",
-  "LR": "tab.next",
-  "RL": "tab.prev",
-  "LU": "history.open",
-  "LD": "bookmarks.open",
-  "RD": "downloads.open",
-  "RU": "tab.duplicate"
+  "L":   "tab.back",
+  "R":   "tab.forward",
+  "U":   "tab.scrollTop",
+  "D":   "tab.scrollBottom",
+  "DR":  "tab.close",
+  "DL":  "tab.reopen",
+  "UR":  "tab.next",
+  "UL":  "tab.prev",
+  "UD":  "tab.reload",
+  "RL":  "tab.duplicate",
+  "LR":  "window.new",
+  "DU":  "page.top",
+  "RUL": "history.open",
+  "LDR": "bookmarks.open",
+  "URD": "downloads.open"
 };
 
 const DEFAULT_SETTINGS = {
