@@ -16,7 +16,7 @@ body { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
 .ogc-hero {
   background: linear-gradient(135deg, #ff7900 0%, #ff9a3c 100%);
-  color: #fff;
+  color: #000;
   padding: 48px 24px 56px;
 }
 .ogc-hero-inner { max-width: 880px; margin: 0 auto; }
@@ -25,7 +25,7 @@ body { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-weight: 600; opacity: .95; margin-bottom: 16px;
   font-size: 14px; letter-spacing: .04em; text-transform: uppercase;
 }
-.ogc-dot { width: 10px; height: 10px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,.25); }
+.ogc-dot { width: 10px; height: 10px; border-radius: 999px; background: #000; box-shadow: 0 0 0 4px rgba(0,0,0,.2); }
 .ogc-hero h1 { font-size: 34px; line-height: 1.15; margin: 0 0 12px; font-weight: 700; }
 .ogc-lead { font-size: 16px; max-width: 56ch; margin: 0; opacity: .95; }
 .ogc-lead-sm { color: var(--ogc-muted); margin: 4px 0 18px; }
@@ -55,7 +55,7 @@ body { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   display: inline-block; padding: 7px 14px; border-radius: 7px;
   font-size: 14px; color: #334155; transition: background .15s, color .15s;
 }
-.ogc-segmented input:checked + span { background: var(--ogc-orange); color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.ogc-segmented input:checked + span { background: var(--ogc-orange); color: #000; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 .ogc-segmented label:hover span { color: var(--ogc-ink); }
 
 .ogc-actions { display: flex; align-items: center; gap: 14px; }
@@ -67,11 +67,15 @@ body { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   padding: 9px 16px; font: inherit; font-weight: 600;
   cursor: pointer; transition: background .15s, border-color .15s, color .15s;
 }
-.ogc-btn-primary { background: var(--ogc-orange); color: #fff; }
-.ogc-btn-primary:hover { background: var(--ogc-orange-dark); }
-.ogc-btn-primary:disabled { background: #fcd9b6; cursor: not-allowed; }
+.ogc-btn-primary { background: var(--ogc-orange); color: #000; }
+.ogc-btn-primary:disabled { background: #fcd9b6; cursor: not-allowed; color: #555; }
 .ogc-btn-ghost { background: transparent; color: var(--ogc-ink); border-color: var(--ogc-border); }
-.ogc-btn-ghost:hover { background: #f1f5f9; }
+
+/* Interactive feedback: hover = noir/blanc, click = blanc/noir */
+.ogc-btn:hover:not(:disabled) { background: #000 !important; color: #fff !important; border-color: #000 !important; }
+.ogc-btn:active:not(:disabled) { background: #fff !important; color: #000 !important; border-color: #000 !important; }
+.ogc-segmented label:hover span { background: #000; color: #fff; }
+.ogc-segmented label:active span { background: #fff; color: #000; }
 
 /* custom gestures list */
 .ogc-custom-list { display: grid; gap: 8px; }
@@ -90,8 +94,19 @@ body { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 .ogc-gesture-seq.custom { background: #fff1e0; color: #b34a00; }
 .ogc-badge {
   font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
-  background: var(--ogc-orange); color: #fff; padding: 2px 7px; border-radius: 999px;
+  background: var(--ogc-orange); color: #000; padding: 2px 7px; border-radius: 999px;
   margin-left: 6px;
+}
+
+/* Notice card before settings */
+.ogc-notice {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #7c2d12;
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  font-size: 14px;
 }
 
 /* wizard overlay */
