@@ -214,11 +214,6 @@ const ACTIONS = {
 };
 
 async function cycleTab(tab, delta) {
-  // helper local; full impl below
-  return cycleTabImpl(tab, delta);
-}
-
-async function cycleTabImpl(tab, delta) {
   const tabs = await browser.tabs.query({ currentWindow: true });
   const sorted = tabs.sort((a, b) => a.index - b.index);
   if (sorted.length < 2) return false;
