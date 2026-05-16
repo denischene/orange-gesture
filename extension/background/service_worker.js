@@ -156,10 +156,10 @@ const ACTIONS = {
       : "https://www.google.com/";
     return browser.tabs.create({ url });
   },
-  "help.toggle":    async () => {
+  "help.toggle":    async (tab) => {
     try {
       const sa = browser.sidebarAction;
-      if (!sa) return;
+      if (!sa) return browser.tabs.sendMessage(tab.id, { type: "ogc.toggleHelpPanel" }).catch(() => {});
       // Appeler toggle() en tout premier : sur certains navigateurs,
       // l'activation utilisateur est perdue après un await intermédiaire.
       if (typeof sa.toggle === "function") return sa.toggle();
@@ -172,7 +172,8 @@ const ACTIONS = {
       return sa.open?.();
     } catch (e) {
       console.warn("[OGC] help.toggle failed", e);
-      try { await browser.sidebarAction.open(); } catch {}
+      try { await browser.sidebarAction.open(); }
+      catch { await browser.tabs.sendMessage(tab.id, { type: "ogc.toggleHelpPanel" }).catch(() => {}); }
     }
   },
   "tab.new":        async (tab, ctx) => {
@@ -221,7 +222,8 @@ async function cycleTab(tab, delta) {
   const next = sorted[(i + delta + sorted.length) % sorted.length];
   if (!next || next.id === tab.id) return false;
   await browser.tabs.update(next.id, { active: true });
-  return true;
+  try { await browser.tabs.sendMessage(next.id, { type: "ogc.adoptLongPress" }); } catch {}
+  return { pressTabId: next.id };
 }
 
 async function scrollExtreme(tab, where) {
