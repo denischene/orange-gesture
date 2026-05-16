@@ -201,3 +201,23 @@
   border-radius: 0;
   padding-bottom: calc(0.375rem - 4px);
 }
+
+/* Global interactive feedback on buttons across the marketing site:
+ * hover = black bg / white text, active (click) = white bg / black text.
+ * Excludes navigation links rendered as buttons. */
+button:not(.ogc-nav-link):hover {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+button:not(.ogc-nav-link):active {
+  background-color: #fff !important;
+  color: #000 !important;
+}
+a.ogc-btn-link:hover {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+a.ogc-btn-link:active {
+  background-color: #fff !important;
+  color: #000 !important;
+}
