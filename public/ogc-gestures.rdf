@@ -109,12 +109,14 @@
     <ogc:action>window.maximize</ogc:action>
     <ogc:label xml:lang="fr">Agrandir la fenêtre</ogc:label>
     <ogc:longLabel xml:lang="fr">État fenêtre suivant</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
     <ogc:sequence>UR</ogc:sequence>
   </ogc:Gesture>
   <ogc:Gesture rdf:about="urn:ogc:action:window.minimize">
     <ogc:action>window.minimize</ogc:action>
     <ogc:label xml:lang="fr">Réduire la fenêtre</ogc:label>
     <ogc:longLabel xml:lang="fr">État fenêtre précédent</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
     <ogc:sequence>DL</ogc:sequence>
   </ogc:Gesture>
   <ogc:Gesture rdf:about="urn:ogc:action:zoom.in">

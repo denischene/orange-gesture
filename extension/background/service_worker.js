@@ -264,16 +264,41 @@ const WIN_STATES = ["minimized", "normal", "maximized", "fullscreen"];
 async function cycleWindowState(delta) {
   const win = await browser.windows.getCurrent();
   const i = WIN_STATES.indexOf(win.state);
-  const next = WIN_STATES[Math.max(0, Math.min(WIN_STATES.length - 1, i + delta))];
+  // Wrap around so repeated long-press keeps cycling through states.
+  const n = WIN_STATES.length;
+  const next = WIN_STATES[((i + delta) % n + n) % n];
   await browser.windows.update(win.id, { state: next });
+}
+
+/* ---------- background-driven repetition ----------
+ * The content-script long-press timer dies as soon as the page navigates
+ * (page.back/forward) or the tab closes (tab.close), and is unreliable on
+ * tab switches. So the content script fires one long-press stroke and the
+ * background owns the repeat loop until it receives "ogc.repeatStop".
+ */
+const REPEAT_MS = 450;
+let activeRepeat = null;
+function stopRepeat() {
+  if (activeRepeat) { clearInterval(activeRepeat.id); activeRepeat = null; }
+}
+
+async function getCurrentTab(originTab) {
+  try {
+    const wid = originTab?.windowId;
+    const tabs = await browser.tabs.query({ active: true, windowId: wid });
+    return tabs[0] || originTab;
+  } catch { return originTab; }
 }
 
 browser.runtime.onMessage.addListener(async (msg, sender) => {
   const tab = sender.tab;
   if (!tab) return;
+  if (msg?.type === "ogc.repeatStop") { stopRepeat(); return; }
   if (msg?.type !== "ogc.stroke" || !Array.isArray(msg.points)) return;
 
   const ctx = msg.context ?? {};
+  // Any new stroke cancels a pending repeat.
+  stopRepeat();
   let sequence = "";
   let nativeAction = null;
   try {
@@ -287,22 +312,29 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   const entry = (nativeAction && ENTRY_BY_ACTION[nativeAction]) || findVocab(sequence);
   if (!entry) return;
 
-  // For repeats: only "repeat" tagged actions get re-fired.
-  if (ctx.repeat && !entry.repeat) return;
-
   const handler = ACTIONS[entry.action];
   if (!handler) return;
 
   // Send tooltip feedback to the page (FR label).
   const labelText = ctx.longPress && entry.longLabel ? entry.longLabel : entry.label;
-  if (!ctx.repeat) {
-    browser.tabs.sendMessage(tab.id, {
-      type: "ogc.feedback",
-      label: labelText,
-      long: !!ctx.longPress
-    }).catch(() => {});
-  }
+  browser.tabs.sendMessage(tab.id, {
+    type: "ogc.feedback",
+    label: labelText,
+    long: !!ctx.longPress
+  }).catch(() => {});
 
   try { await handler(tab, ctx); }
   catch (err) { console.warn("[OGC] action failed", entry.action, sequence, err); }
+
+  // Start background-driven repetition for long-press on repeatable gestures.
+  if (ctx.longPress && entry.repeat) {
+    activeRepeat = {
+      id: setInterval(async () => {
+        try {
+          const target = await getCurrentTab(tab);
+          if (target) await handler(target, ctx);
+        } catch (err) { console.warn("[OGC] repeat failed", entry.action, err); }
+      }, REPEAT_MS)
+    };
+  }
 });
