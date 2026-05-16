@@ -19,6 +19,29 @@ const customList = document.getElementById("ogc-custom-list");
 let GESTURES = [];
 let customGestures = {};
 
+/* Mapping id de geste → nom de fichier d'imagette (extension/img/<name>.png). */
+const GESTURE_IMG = {
+  "page.back":       "right_left",
+  "page.forward":    "left_right",
+  "scroll.up":       "bottom_top",
+  "scroll.down":     "top_bottom",
+  "page.top":        "left_right_top",
+  "page.bottom":     "left_right_bottom",
+  "site.home":       "accueil",
+  "search.web":      "magnifying_glass",
+  "help.toggle":     "interogation",
+  "tab.new":         "top_down_arch",
+  "tab.next":        "left_right_arch",
+  "tab.prev":        "right_left_arch",
+  "tab.close":       "alpha",
+  "window.maximize": "bottom_left_top_right",
+  "window.minimize": "top_right_bottom_left",
+  "zoom.in":         "clockwise_circle",
+  "zoom.out":        "anticlockwise_circle",
+  "bookmarks.add":   "left_right_heart",
+  "page.saveAs":     "vertical_ribbon"
+};
+
 /* ---------- réglages ---------- */
 
 async function loadSettings() {
@@ -75,7 +98,9 @@ function renderCustomList() {
     row.className = "ogc-gesture-row";
     const isCustom = !!customGestures[g.id];
     const seq = customGestures[g.id] || g.canonical;
+    const imgName = GESTURE_IMG[g.id] || "";
     row.innerHTML = `
+      <img class="ogc-gesture-img" src="../img/${imgName}.png" alt="" onerror="this.style.visibility='hidden'" />
       <div>
         <span class="ogc-gesture-label">${g.label}</span>
         ${isCustom ? '<span class="ogc-badge">Personnalisé</span>' : ""}
