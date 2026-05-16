@@ -207,7 +207,20 @@ const ACTIONS = {
   },
   "tab.next":       async (tab) => cycleTab(tab, +1),
   "tab.prev":       async (tab) => cycleTab(tab, -1),
-  "tab.close":      async (tab) => browser.tabs.remove(tab.id),
+  "tab.close":      async (tab) => {
+    await browser.tabs.remove(tab.id);
+    // Après fermeture, l'onglet d'origine n'existe plus : on récupère le
+    // nouvel onglet actif et on lui transmet l'état d'appui long pour que
+    // la boucle de répétition continue de pinger le bon document.
+    try {
+      const [next] = await browser.tabs.query({ active: true, windowId: tab.windowId });
+      if (next && next.id !== tab.id) {
+        try { await browser.tabs.sendMessage(next.id, { type: "ogc.adoptLongPress" }); } catch {}
+        return { pressTabId: next.id };
+      }
+    } catch {}
+    return false;
+  },
   "window.maximize":async () => cycleWindowState(+1),
   "window.minimize":async () => cycleWindowState(-1),
   "zoom.in":        async (tab) => zoomBy(tab, +0.1),
