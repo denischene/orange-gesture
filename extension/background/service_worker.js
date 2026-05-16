@@ -386,8 +386,8 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   // gestes répétables, sauf si la première exécution a déjà demandé l'arrêt.
   if (ctx.longPress && entry.repeat && firstResult !== false) {
     const token = Symbol("repeat");
-    activeRepeat = { token, timer: null };
-    scheduleRepeat(handler, tab, ctx, token);
+    activeRepeat = { token, timer: null, pressTabId: tab.id };
+    scheduleRepeat(entry, handler, tab, ctx, token);
   }
 });
 
