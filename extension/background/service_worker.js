@@ -420,7 +420,8 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   // Prefer the native exact match embedded in the WASM; fall back to the JS
   // fuzzy matcher only when the C++ table has no exact hit.
   const hintedEntry = typeof msg.actionHint === "string" ? ENTRY_BY_ACTION[msg.actionHint] : null;
-  const entry = hintedEntry || (nativeAction && ENTRY_BY_ACTION[nativeAction]) || findVocab(sequence);
+  const customEntry = CUSTOM_VOCAB[sequence] || null;
+  const entry = hintedEntry || customEntry || (nativeAction && ENTRY_BY_ACTION[nativeAction]) || findVocab(sequence);
   if (!entry) return;
 
   const handler = ACTIONS[entry.action];
@@ -440,7 +441,7 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
 
   // Démarre la boucle de répétition pilotée par le background pour les
   // gestes répétables, sauf si la première exécution a déjà demandé l'arrêt.
-  if (ctx.longPress && entry.repeat && firstResult !== false) {
+  if (ctx.longPress && entry.repeat && firstResult !== false && SETTINGS.repeatEnabled !== false) {
     const token = Symbol("repeat");
     activeRepeat = { token, timer: null, pressTabId: tab.id };
     scheduleRepeat(entry, handler, tab, ctx, token);
