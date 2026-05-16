@@ -133,6 +133,7 @@ export default {
       "id": "window.maximize",
       "label": "Agrandir la fenêtre",
       "longLabel": "État fenêtre suivant",
+      "repeat": true,
       "canonical": "UR",
       "aliases": []
     },
@@ -140,6 +141,7 @@ export default {
       "id": "window.minimize",
       "label": "Réduire la fenêtre",
       "longLabel": "État fenêtre précédent",
+      "repeat": true,
       "canonical": "DL",
       "aliases": []
     },
