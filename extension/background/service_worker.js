@@ -3,7 +3,7 @@
  * don't have to draw the exact canonical sequence.
  */
 import { recognizeAction, preload } from "./wasm_loader.js";
-import GESTURES from "../data/gestures.json" with { type: "json" };
+import GESTURES from "../data/gestures.data.js";
 
 // Build the runtime vocabulary from the single JSON source of truth.
 // Every canonical sequence + every alias maps to the same entry so the
