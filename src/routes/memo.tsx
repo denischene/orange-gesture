@@ -44,7 +44,12 @@ const GESTURES: Gesture[] = [
   { name: "top_right_bottom_left", title: "Réduire fenêtre",               longTitle: "État fenêtre précédent",       sequence: "DL",           dot: "bottom-left" },
   { name: "right_left_arch",       title: "Onglet précédent",              longTitle: "Onglet précédent répété",      sequence: "DDLLULU",      dot: "bottom-left" },
   { name: "left_right_arch",       title: "Onglet suivant",                longTitle: "Onglet suivant répété",        sequence: "URRDRD",       dot: "bottom-right" },
-  { name: "top_down_arch",         title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bott
+  { name: "top_down_arch",         title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bottom-right", note: "Sur lien : ouvre le lien" },
+  { name: "alpha",                 title: "Fermer",                        longTitle: "Fermer répété",                sequence: "DRULDR",       dot: "right" },
+  { name: "magnifying_glass",      title: "Rechercher sur internet",       longTitle: "Rechercher dans la page",      sequence: "URUURRDLDDL",  dot: "bottom-left" },
+  { name: "left_right_heart",      title: "Ajouter aux favoris",           sequence: "LRULRD",                                                 dot: "right" },
+  { name: "vertical_ribbon",       title: "Enregistrer sous…",             sequence: "DDRURUULL",                                              dot: "none" },
+];
 
 const DOT_POS: Record<Exclude<DotPos, "none">, React.CSSProperties> = {
   top:           { top: "4%",  left: "50%",  transform: "translate(-50%, 0)" },
