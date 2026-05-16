@@ -3,6 +3,7 @@
  * don't have to draw the exact canonical sequence.
  */
 import "../lib/compat.js";
+import "../lib/storage.js";
 import { recognizeAction, preload } from "./wasm_loader.js";
 import GESTURES from "../data/gestures.data.js";
 
@@ -38,7 +39,7 @@ async function refreshSettings() {
   SETTINGS = { ...DEFAULT_SETTINGS, ...(settings || {}) };
 }
 async function refreshCustom() {
-  const { customGestures = {} } = await browser.storage.local.get("customGestures");
+  const customGestures = await OGCStore.getCustom();
   const next = {};
   for (const [actionId, seq] of Object.entries(customGestures || {})) {
     const entry = ENTRY_BY_ACTION[actionId];
