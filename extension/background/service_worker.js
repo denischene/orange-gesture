@@ -122,36 +122,32 @@ const ACTIONS = {
   },
   "search.web":     async (tab, ctx) => {
     if (ctx?.longPress) {
-      // "Rechercher dans la page" : utilise l'API browser.find pour
-      // rechercher la sélection courante (ou le presse-papiers en repli)
-      // et surligne les résultats dans l'onglet actif.
-      let query = ctx?.selection?.trim() || "";
+      // "Rechercher dans la page" : ouvre une mini barre de recherche
+      // injectée dans la page (équivalent fonctionnel de Ctrl+F).
+      let query = (ctx?.selection ?? "").trim();
       if (!query) {
         try {
           const r = await browser.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => (window.getSelection?.()?.toString() || "").trim()
           });
-          query = r?.[0]?.result || "";
+          query = (r?.[0]?.result || "").trim();
         } catch {}
       }
-      if (!query) {
-        try { query = (await navigator.clipboard.readText())?.trim() || ""; }
-        catch {}
-      }
-      if (!query) {
-        // Pas de requête : afficher une notification d'aide.
-        return browser.notifications?.create?.({
-          type: "basic",
-          iconUrl: "icons/ogc-48.png",
-          title: "Rechercher dans la page",
-          message: "Sélectionnez du texte avant l'appui long, ou utilisez Ctrl+F."
-        });
-      }
       try {
-        await browser.find.find(query, { tabId: tab.id, caseSensitive: false });
-        await browser.find.highlightResults({ tabId: tab.id });
-      } catch (e) { console.warn("[OGC] find failed", e); }
+        await browser.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: openInPageFind,
+          args: [query]
+        });
+      } catch (e) { console.warn("[OGC] in-page find failed", e); }
+      // En complément, on tente aussi l'API native find/highlight si dispo.
+      if (query) {
+        try {
+          await browser.find.find(query, { tabId: tab.id, caseSensitive: false });
+          await browser.find.highlightResults({ tabId: tab.id });
+        } catch {}
+      }
       return;
     }
     const q = ctx?.selection?.trim();
@@ -280,22 +276,36 @@ const WIN_STATES = ["minimized", "normal", "maximized", "fullscreen"];
 async function cycleWindowState(delta) {
   const win = await browser.windows.getCurrent();
   const i = WIN_STATES.indexOf(win.state);
-  // Wrap around so repeated long-press keeps cycling through states.
-  const n = WIN_STATES.length;
-  const next = WIN_STATES[((i + delta) % n + n) % n];
-  await browser.windows.update(win.id, { state: next });
+  // Clamp aux extrémités : on s'arrête à `minimized` ou `fullscreen`.
+  const j = Math.max(0, Math.min(WIN_STATES.length - 1, i + delta));
+  if (j === i) return false; // signale au répéteur qu'il faut s'arrêter
+  await browser.windows.update(win.id, { state: WIN_STATES[j] });
+  // Retourne false aussi si on vient d'atteindre une extrémité, pour
+  // que la prochaine itération soit évitée.
+  if (j === 0 || j === WIN_STATES.length - 1) return false;
+  return true;
 }
 
 /* ---------- background-driven repetition ----------
- * The content-script long-press timer dies as soon as the page navigates
- * (page.back/forward) or the tab closes (tab.close), and is unreliable on
- * tab switches. So the content script fires one long-press stroke and the
- * background owns the repeat loop until it receives "ogc.repeatStop".
+ * Pour fiabiliser la répétition au-delà des navigations (page.back, tab.close,
+ * tab.next), le background pilote la boucle : après chaque action, on attend
+ * REPEAT_MS puis on demande à l'onglet actif si l'utilisateur maintient
+ * toujours l'appui. Si oui, on répète. Sinon, on s'arrête.
  */
-const REPEAT_MS = 450;
+const REPEAT_MS = 2000;
 let activeRepeat = null;
 function stopRepeat() {
-  if (activeRepeat) { clearInterval(activeRepeat.id); activeRepeat = null; }
+  if (activeRepeat) {
+    if (activeRepeat.timer) clearTimeout(activeRepeat.timer);
+    activeRepeat = null;
+  }
+}
+
+async function pingLongPress(tabId) {
+  try {
+    const r = await browser.tabs.sendMessage(tabId, { type: "ogc.pingLongPress" });
+    return !!r?.active;
+  } catch { return false; }
 }
 
 async function getCurrentTab(originTab) {
@@ -304,6 +314,24 @@ async function getCurrentTab(originTab) {
     const tabs = await browser.tabs.query({ active: true, windowId: wid });
     return tabs[0] || originTab;
   } catch { return originTab; }
+}
+
+function scheduleRepeat(handler, originTab, ctx, token) {
+  if (!activeRepeat || activeRepeat.token !== token) return;
+  activeRepeat.timer = setTimeout(async () => {
+    if (!activeRepeat || activeRepeat.token !== token) return;
+    const target = await getCurrentTab(originTab);
+    if (!target) { stopRepeat(); return; }
+    const stillPressing = await pingLongPress(target.id);
+    if (!stillPressing) { stopRepeat(); return; }
+    let cont = true;
+    try {
+      const r = await handler(target, ctx);
+      if (r === false) cont = false;
+    } catch (err) { console.warn("[OGC] repeat failed", err); }
+    if (!cont) { stopRepeat(); return; }
+    scheduleRepeat(handler, originTab, ctx, token);
+  }, REPEAT_MS);
 }
 
 browser.runtime.onMessage.addListener(async (msg, sender) => {
@@ -339,18 +367,59 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
     long: !!ctx.longPress
   }).catch(() => {});
 
-  try { await handler(tab, ctx); }
+  let firstResult;
+  try { firstResult = await handler(tab, ctx); }
   catch (err) { console.warn("[OGC] action failed", entry.action, sequence, err); }
 
-  // Start background-driven repetition for long-press on repeatable gestures.
-  if (ctx.longPress && entry.repeat) {
-    activeRepeat = {
-      id: setInterval(async () => {
-        try {
-          const target = await getCurrentTab(tab);
-          if (target) await handler(target, ctx);
-        } catch (err) { console.warn("[OGC] repeat failed", entry.action, err); }
-      }, REPEAT_MS)
-    };
+  // Démarre la boucle de répétition pilotée par le background pour les
+  // gestes répétables, sauf si la première exécution a déjà demandé l'arrêt.
+  if (ctx.longPress && entry.repeat && firstResult !== false) {
+    const token = Symbol("repeat");
+    activeRepeat = { token, timer: null };
+    scheduleRepeat(handler, tab, ctx, token);
   }
 });
+
+/* ---------- helper injecté pour la recherche dans la page ---------- */
+function openInPageFind(initialQuery) {
+  try {
+    const ID = "__ogc_find_bar__";
+    document.getElementById(ID)?.remove();
+    const bar = document.createElement("div");
+    bar.id = ID;
+    bar.style.cssText = [
+      "position:fixed", "top:12px", "right:12px", "z-index:2147483647",
+      "background:#fff", "color:#111", "border:1px solid #ccc",
+      "border-radius:8px", "box-shadow:0 4px 16px rgba(0,0,0,.2)",
+      "padding:8px 10px", "font:14px/1.2 system-ui,sans-serif",
+      "display:flex", "gap:6px", "align-items:center"
+    ].join(";");
+    const input = document.createElement("input");
+    input.type = "search";
+    input.placeholder = "Rechercher dans la page…";
+    input.value = initialQuery || "";
+    input.style.cssText = "border:1px solid #ccc;border-radius:6px;padding:4px 8px;min-width:220px;font:inherit";
+    const prev = document.createElement("button"); prev.textContent = "◀";
+    const next = document.createElement("button"); next.textContent = "▶";
+    const close = document.createElement("button"); close.textContent = "✕";
+    for (const b of [prev, next, close]) {
+      b.style.cssText = "border:1px solid #ccc;background:#f4f4f4;border-radius:6px;padding:2px 8px;cursor:pointer;font:inherit";
+    }
+    const doFind = (forward) => {
+      const q = input.value;
+      if (!q) return;
+      try { window.find(q, false, !forward, true, false, true, false); } catch {}
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); doFind(!e.shiftKey); }
+      else if (e.key === "Escape") { e.preventDefault(); bar.remove(); }
+    });
+    next.addEventListener("click", () => doFind(true));
+    prev.addEventListener("click", () => doFind(false));
+    close.addEventListener("click", () => bar.remove());
+    bar.append(input, prev, next, close);
+    document.documentElement.appendChild(bar);
+    input.focus(); input.select();
+    if (initialQuery) doFind(true);
+  } catch (e) { console.warn("[OGC] openInPageFind", e); }
+}
