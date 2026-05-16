@@ -382,3 +382,63 @@ tabButtons.forEach((btn) => {
   requestAnimationFrame(resizeCanvas);
   window.addEventListener("resize", () => { if (!wizard.hidden) resizeCanvas(); });
 })();
+
+/* ---------- export / import ---------- */
+const exportBtn = document.getElementById("ogc-export");
+const importBtn = document.getElementById("ogc-import");
+const importFile = document.getElementById("ogc-import-file");
+const ioStatus = document.getElementById("ogc-io-status");
+function flashIo(msg) {
+  if (!ioStatus) return;
+  ioStatus.textContent = msg;
+  setTimeout(() => { ioStatus.textContent = ""; }, 2500);
+}
+exportBtn?.addEventListener("click", () => {
+  const payload = {
+    app: "Orange Gesture Control",
+    type: "customGestures",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    customGestures
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ogc-gestes-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  flashIo("Export effectué.");
+});
+importBtn?.addEventListener("click", () => importFile?.click());
+importFile?.addEventListener("change", async () => {
+  const file = importFile.files?.[0];
+  importFile.value = "";
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const cg = data?.customGestures;
+    if (!cg || typeof cg !== "object") throw new Error("Format invalide.");
+    const known = new Set(GESTURES.map((g) => g.id));
+    const merged = { ...customGestures };
+    let n = 0;
+    for (const [id, seq] of Object.entries(cg)) {
+      if (known.has(id) && typeof seq === "string" && seq.length) {
+        merged[id] = seq; n++;
+      }
+    }
+    customGestures = merged;
+    await OGCStore.setCustom(customGestures);
+    renderCustomList();
+    flashIo(`Import réussi (${n} geste${n > 1 ? "s" : ""}).`);
+  } catch (e) {
+    flashIo("Import impossible : " + (e?.message || e));
+  }
+});
+
+/* Recharge la liste si la sync apporte un changement venu d'un autre profil. */
+OGCStore.onCustomChanged(async (newValue) => {
+  customGestures = newValue || {};
+  renderCustomList();
+});
