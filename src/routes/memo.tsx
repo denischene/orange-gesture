@@ -39,7 +39,7 @@ const GESTURES: Gesture[] = [
   { name: "left_right_bottom",     title: "Aller en bas de page",          sequence: "RD",                                                     dot: "none" },
   { name: "clockwise_circle",      title: "Zoomer",                        longTitle: "Zoom progressif (+10%)",       sequence: "DRDDLLLUURUR", dot: "top-right" },
   { name: "anticlockwise_circle",  title: "Dézoomer",                      longTitle: "Dézoom progressif (−10%)",     sequence: "LDLDDRRULUUL", dot: "top-left" },
-  { name: "top_down_heart",        title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bottom-right", note: "Sur lien : ouvre le lien", custom: "newtab" },
+  { name: "top_down_arch",         title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bottom-right", note: "Sur lien : ouvre le lien" },
   { name: "left_right_arch",       title: "Onglet suivant",                longTitle: "Onglet suivant répété",        sequence: "URRDRD",       dot: "bottom-right" },
   { name: "right_left_arch",       title: "Onglet précédent",              longTitle: "Onglet précédent répété",      sequence: "DDLLULU",      dot: "bottom-left" },
   { name: "alpha",                 title: "Fermer",                        longTitle: "Fermer répété",                sequence: "DRULDR",       dot: "right" },
