@@ -14,10 +14,11 @@
       header img { width: 28px; height: 28px; }
       h1 { color: var(--orange); font-size: 14px; margin: 0; }
       .hint { font-size: 11px; color: #666; margin: 0 12px 6px;
-              font-style: italic; }
+              font-style: italic; line-height: 1.35; }
+      .hint span { display: block; }
       #preview { display: flex; align-items: center; justify-content: center;
                  flex-direction: column; padding: 8px;
-                 border-bottom: 1px solid var(--border); background: #fff;
+                  border-top: 1px solid var(--border); background: #fff;
                  min-height: 180px; }
       #preview img { max-width: 160px; max-height: 160px; object-fit: contain; }
       #preview .label { margin-top: 6px; font-size: 12px; font-weight: 600;
@@ -42,11 +43,14 @@
       <img src="../icons/ogc-32.png" alt="" />
       <h1>OGC — Aide gestes</h1>
     </header>
-    <p class="hint">Cliquez un geste pour voir l'animation. Un appui long en fin de geste déclenche une action prolongée ou contextuelle.</p>
-    <div id="preview">
-      <div class="placeholder">Sélectionnez un geste ci-dessous.</div>
-    </div>
     <div id="grid"></div>
+    <p class="hint">
+      <span>Cliquez un geste pour voir l'animation.</span>
+      <span>Un appui long en fin de geste déclenche une action prolongée ou contextuelle.</span>
+    </p>
+    <div id="preview">
+      <div class="placeholder">Sélectionnez un geste ci-dessus.</div>
+    </div>
     <script src="sidebar.js"></script>
   </body>
 </html>
