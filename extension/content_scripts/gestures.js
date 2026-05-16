@@ -12,6 +12,8 @@
   let longPressTimer = null;
   let repeatTimer = null;
   let longPressFired = false;
+  // Premier hyperlien rencontré pendant le geste (au démarrage ou en cours).
+  let firstLinkHref = null;
   let settings = { enabled: true, button: 2, trails: true, tooltips: true };
 
   browser.storage.local.get("settings").then((s) => {
@@ -30,10 +32,21 @@
     );
     return {
       selection: sel,
-      linkHref: link?.href ?? null,
+      // Priorité au 1er hyperlien franchi par le geste ; à défaut, celui
+      // sous le point de départ.
+      linkHref: firstLinkHref ?? link?.href ?? null,
       imageSrc: img?.src ?? null,
       inEditable: editable
     };
+  }
+
+  function captureLinkAt(x, y, fallbackTarget) {
+    if (firstLinkHref) return;
+    let el = null;
+    try { el = document.elementFromPoint(x, y); } catch {}
+    el = el || fallbackTarget;
+    const a = el?.closest?.("a[href]");
+    if (a?.href) firstLinkHref = a.href;
   }
 
   function clearTimers() {
@@ -72,10 +85,12 @@
     suppressContext = false;
     longPressFired = false;
     downTarget = e.target;
+    firstLinkHref = null;
     recognizer.reset();
     points.length = 0;
     points.push([e.clientX, e.clientY]);
     recognizer.addPoint(e.clientX, e.clientY);
+    captureLinkAt(e.clientX, e.clientY, e.target);
     lastMoveAt = performance.now();
     if (settings.trails) window.OGC_Trails?.start(e.clientX, e.clientY);
     window.OGC_Tooltips?.show("");
@@ -85,6 +100,7 @@
     if (!active) return;
     points.push([e.clientX, e.clientY]);
     recognizer.addPoint(e.clientX, e.clientY);
+    captureLinkAt(e.clientX, e.clientY, e.target);
     lastMoveAt = performance.now();
     if (longPressFired) { clearTimers(); return; }
     scheduleLongPress();
