@@ -87,8 +87,7 @@ async function loadGestures() {
 }
 
 async function loadCustomGestures() {
-  const { customGestures: cg = {} } = await browser.storage.local.get("customGestures");
-  customGestures = cg || {};
+  customGestures = await OGCStore.getCustom();
 }
 
 function renderCustomList() {
@@ -112,7 +111,7 @@ function renderCustomList() {
     row.querySelector('[data-action="customize"]').addEventListener("click", () => openWizard(g));
     row.querySelector('[data-action="reset"]').addEventListener("click", async () => {
       delete customGestures[g.id];
-      await browser.storage.local.set({ customGestures });
+      await OGCStore.setCustom(customGestures);
       renderCustomList();
     });
     customList.appendChild(row);
