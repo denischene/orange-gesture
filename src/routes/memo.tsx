@@ -30,26 +30,21 @@ type Gesture = {
 };
 
 const GESTURES: Gesture[] = [
-  { name: "undo",                  title: "Page d'accueil du site",        longTitle: "Page d'accueil du navigateur", sequence: "LURDR",        dot: "bottom-right", custom: "home" },
-  { name: "bottom_top",            title: "Haut",                          longTitle: "Haut répété",                  sequence: "U",            dot: "top",    note: "Sur sélection : Copier" },
-  { name: "top_bottom",            title: "Bas",                           longTitle: "Bas répété",                   sequence: "D",            dot: "bottom", note: "Dans un champ : Coller" },
-  { name: "magnifying_glass",      title: "Rechercher sur internet",       longTitle: "Rechercher dans la page",      sequence: "URUURRDLDDL",  dot: "bottom-left" },
   { name: "interogation",          title: "Aide",                          sequence: "UURRDDLDD",                                              dot: "none" },
-  { name: "left_right_top",        title: "Aller en haut de page",         sequence: "RU",                                                     dot: "none" },
-  { name: "left_right_bottom",     title: "Aller en bas de page",          sequence: "RD",                                                     dot: "none" },
-  { name: "clockwise_circle",      title: "Zoomer",                        longTitle: "Zoom progressif (+10%)",       sequence: "DRDDLLLUURUR", dot: "top-right" },
-  { name: "anticlockwise_circle",  title: "Dézoomer",                      longTitle: "Dézoom progressif (−10%)",     sequence: "LDLDDRRULUUL", dot: "top-left" },
-  { name: "top_down_arch",         title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bottom-right", note: "Sur lien : ouvre le lien" },
-  { name: "left_right_arch",       title: "Onglet suivant",                longTitle: "Onglet suivant répété",        sequence: "URRDRD",       dot: "bottom-right" },
-  { name: "right_left_arch",       title: "Onglet précédent",              longTitle: "Onglet précédent répété",      sequence: "DDLLULU",      dot: "bottom-left" },
-  { name: "alpha",                 title: "Fermer",                        longTitle: "Fermer répété",                sequence: "DRULDR",       dot: "right" },
-  { name: "bottom_left_top_right", title: "Agrandir fenêtre",              longTitle: "État fenêtre suivant",         sequence: "UR",           dot: "top-right" },
-  { name: "top_right_bottom_left", title: "Réduire fenêtre",               longTitle: "État fenêtre précédent",       sequence: "DL",           dot: "bottom-left" },
-  { name: "left_right_heart",      title: "Ajouter aux favoris",           sequence: "LRULRD",                                                 dot: "right" },
-  { name: "vertical_ribbon",       title: "Enregistrer sous…",             sequence: "DDRURUULL",                                              dot: "none" },
+  { name: "top_bottom",            title: "Descendre",                     longTitle: "Descendre (répété)",           sequence: "D",            dot: "bottom", note: "Dans un champ : Coller" },
+  { name: "bottom_top",            title: "Monter",                        longTitle: "Monter (répété)",              sequence: "U",            dot: "top",    note: "Sur sélection : Copier" },
+  { name: "left_right_bottom",     title: "Bas de page",                   sequence: "RD",                                                     dot: "none" },
+  { name: "left_right_top",        title: "Haut de page",                  sequence: "RU",                                                     dot: "none" },
   { name: "right_left",            title: "Page précédente",               longTitle: "Page précédente répétée",      sequence: "L",            dot: "left" },
   { name: "left_right",            title: "Page suivante",                 longTitle: "Page suivante répétée",        sequence: "R",            dot: "right" },
-];
+  { name: "undo",                  title: "Page d'accueil du site",        longTitle: "Page d'accueil du navigateur", sequence: "LURDR",        dot: "bottom-right", custom: "home" },
+  { name: "clockwise_circle",      title: "Zoomer",                        longTitle: "Zoom progressif (+10%)",       sequence: "DRDDLLLUURUR", dot: "top-right" },
+  { name: "anticlockwise_circle",  title: "Dézoomer",                      longTitle: "Dézoom progressif (−10%)",     sequence: "LDLDDRRULUUL", dot: "top-left" },
+  { name: "bottom_left_top_right", title: "Agrandir fenêtre",              longTitle: "État fenêtre suivant",         sequence: "UR",           dot: "top-right" },
+  { name: "top_right_bottom_left", title: "Réduire fenêtre",               longTitle: "État fenêtre précédent",       sequence: "DL",           dot: "bottom-left" },
+  { name: "right_left_arch",       title: "Onglet précédent",              longTitle: "Onglet précédent répété",      sequence: "DDLLULU",      dot: "bottom-left" },
+  { name: "left_right_arch",       title: "Onglet suivant",                longTitle: "Onglet suivant répété",        sequence: "URRDRD",       dot: "bottom-right" },
+  { name: "top_down_arch",         title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bott
 
 const DOT_POS: Record<Exclude<DotPos, "none">, React.CSSProperties> = {
   top:           { top: "4%",  left: "50%",  transform: "translate(-50%, 0)" },
