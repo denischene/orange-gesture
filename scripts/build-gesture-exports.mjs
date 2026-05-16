@@ -102,3 +102,25 @@ console.log(
   `[gestures] ${vocab.gestures.length} gestures, ${entries.length} sequences ` +
   `→ public/ogc-gestures.{json,rdf} + extension/native/ogc_vocab.h`
 );
+
+/* ---------- extension/lib/vocabulary.js (legacy global, for content script) ---------- */
+const vocabPairs = [];
+for (const g of vocab.gestures) {
+  vocabPairs.push(`    ${JSON.stringify(g.canonical)}: ${JSON.stringify(g.id)}`);
+  for (const a of g.aliases || []) {
+    vocabPairs.push(`    ${JSON.stringify(a)}: ${JSON.stringify(g.id)}`);
+  }
+}
+const vocabJs = [
+  "/* AUTO-GÉNÉRÉ par scripts/build-gesture-exports.mjs — ne pas éditer.",
+  " * Source : extension/data/gestures.json",
+  " * Vocabulaire (séquence -> action) exposé en global pour le content script. */",
+  "(function (root) {",
+  "  const OGC_VOCABULARY = {",
+  vocabPairs.join(",\n"),
+  "  };",
+  "  root.OGC_VOCABULARY = OGC_VOCABULARY;",
+  "})(typeof window !== \"undefined\" ? window : globalThis);",
+  "",
+].join("\n");
+writeFileSync(resolve(ROOT, "extension/lib/vocabulary.js"), vocabJs);
