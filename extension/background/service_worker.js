@@ -214,6 +214,11 @@ const ACTIONS = {
 };
 
 async function cycleTab(tab, delta) {
+  // helper local; full impl below
+  return cycleTabImpl(tab, delta);
+}
+
+async function cycleTabImpl(tab, delta) {
   const tabs = await browser.tabs.query({ currentWindow: true });
   const sorted = tabs.sort((a, b) => a.index - b.index);
   if (sorted.length < 2) return false;
@@ -224,6 +229,34 @@ async function cycleTab(tab, delta) {
   await browser.tabs.update(next.id, { active: true });
   try { await browser.tabs.sendMessage(next.id, { type: "ogc.adoptLongPress" }); } catch {}
   return { pressTabId: next.id };
+}
+
+function waitTabComplete(tabId, timeoutMs = 4000) {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (ok) => {
+      if (done) return;
+      done = true;
+      try { browser.tabs.onUpdated.removeListener(listener); } catch {}
+      clearTimeout(timer);
+      resolve(ok);
+    };
+    const listener = (id, info) => {
+      if (id === tabId && info.status === "complete") finish(true);
+    };
+    const timer = setTimeout(() => finish(false), timeoutMs);
+    try { browser.tabs.onUpdated.addListener(listener); } catch { finish(false); }
+  });
+}
+
+async function navigateAndAdopt(tab, navFn) {
+  try { await navFn(); }
+  catch { return false; }
+  await waitTabComplete(tab.id);
+  // Petite marge pour laisser le content script se réinstaller.
+  await new Promise((r) => setTimeout(r, 60));
+  try { await browser.tabs.sendMessage(tab.id, { type: "ogc.adoptLongPress" }); } catch {}
+  return { pressTabId: tab.id };
 }
 
 async function scrollExtreme(tab, where) {
