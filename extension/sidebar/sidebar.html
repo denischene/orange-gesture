@@ -4,21 +4,37 @@
     <meta charset="utf-8" />
     <title>OGC — Aide gestes</title>
     <style>
-      :root { --orange: #ff7900; }
+      :root { --orange: #ff7900; --border: #e5e5e5; --bg: #fafafa; }
       * { box-sizing: border-box; }
-      body { font: 13px system-ui, sans-serif; padding: 10px; margin: 0; color: #111; }
-      header { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; }
+      html, body { margin: 0; padding: 0; height: 100%; }
+      body { font: 13px system-ui, sans-serif; color: #111;
+             display: flex; flex-direction: column; }
+      header { display: flex; align-items: center; gap: 8px;
+               padding: 10px 12px 6px; }
       header img { width: 28px; height: 28px; }
       h1 { color: var(--orange); font-size: 14px; margin: 0; }
-      .hint { font-size: 12px; color: #555; margin: 0 0 12px; font-style: italic; }
-      .group-title { font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
-                     color: #888; margin: 14px 0 6px; }
-      .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+      .hint { font-size: 11px; color: #666; margin: 0 12px 6px;
+              font-style: italic; }
+      #preview { display: flex; align-items: center; justify-content: center;
+                 flex-direction: column; padding: 8px;
+                 border-bottom: 1px solid var(--border); background: #fff;
+                 min-height: 180px; }
+      #preview img { max-width: 160px; max-height: 160px; object-fit: contain; }
+      #preview .label { margin-top: 6px; font-size: 12px; font-weight: 600;
+                        color: #333; text-align: center; }
+      #preview .placeholder { color: #999; font-size: 12px; font-style: italic;
+                              text-align: center; padding: 30px 10px; }
+      #grid { display: grid; grid-template-columns: repeat(3, 1fr);
+              gap: 6px; padding: 8px; overflow-y: auto; flex: 1; }
       .cell { display: flex; flex-direction: column; align-items: center;
-              padding: 6px 4px; border: 1px solid #eee; border-radius: 6px;
-              background: #fafafa; }
-      .cell img { width: 44px; height: 44px; object-fit: contain; }
-      .cell .lbl { font-size: 11px; margin-top: 4px; text-align: center; line-height: 1.2; }
+              padding: 6px 4px; border: 1px solid var(--border);
+              border-radius: 6px; background: var(--bg); cursor: pointer;
+              transition: background .12s, border-color .12s; }
+      .cell:hover { background: #fff3e5; border-color: var(--orange); }
+      .cell.active { background: #ffe6cc; border-color: var(--orange); }
+      .cell img { width: 40px; height: 40px; object-fit: contain; }
+      .cell .lbl { font-size: 10px; margin-top: 3px; text-align: center;
+                   line-height: 1.15; color: #333; }
     </style>
   </head>
   <body>
@@ -26,60 +42,69 @@
       <img src="../icons/ogc-32.png" alt="" />
       <h1>OGC — Aide gestes</h1>
     </header>
-    <p class="hint">Un appui long répète le geste.</p>
-    <div id="root"></div>
+    <p class="hint">Cliquez un geste pour voir l'animation.</p>
+    <div id="preview">
+      <div class="placeholder">Sélectionnez un geste ci-dessous.</div>
+    </div>
+    <div id="grid"></div>
     <script>
-      const GROUPS = [
-        { title: "", items: [
-          { img: "interogation", lbl: "Aide" }
-        ]},
-        { title: "Sélection", items: [
-          { img: "top_bottom",  lbl: "Descendre / Coller" },
-          { img: "bottom_top",  lbl: "Monter / Copier" }
-        ]},
-        { title: "Page", items: [
-          { img: "left_right_bottom", lbl: "Bas" },
-          { img: "left_right_top",    lbl: "Haut" },
-          { img: "right_left",        lbl: "Précédente" },
-          { img: "left_right",        lbl: "Suivante" },
-          { img: "undo",              lbl: "Accueil" }
-        ]},
-        { title: "Fenêtre", items: [
-          { img: "clockwise_circle",     lbl: "Zoom +" },
-          { img: "anticlockwise_circle", lbl: "Zoom −" },
-          { img: "bottom_left_top_right",lbl: "Agrandir" },
-          { img: "top_right_bottom_left",lbl: "Réduire" }
-        ]},
-        { title: "Onglet", items: [
-          { img: "top_down_heart",  lbl: "Créer" },
-          { img: "left_right_arch", lbl: "Suivant" },
-          { img: "right_left_arch", lbl: "Précédent" },
-          { img: "alpha",           lbl: "Fermer" }
-        ]},
-        { title: "Favoris / Sauvegarde", items: [
-          { img: "left_right_heart", lbl: "Ajouter Favoris" },
-          { img: "vertical_ribbon",  lbl: "Enregistrer sous…" }
-        ]}
+      // Ordre et libellés imposés par la spec.
+      const ITEMS = [
+        { img: "left_right_heart",       lbl: "+favoris" },
+        { img: "bottom_left_top_right",  lbl: "agrandir" },
+        { img: "interogation",           lbl: "aide" },
+        { img: "left_right_bottom",      lbl: "bas page" },
+        { img: "top_bottom",             lbl: "descendre" },
+        { img: "anticlockwise_circle",   lbl: "dézoomer" },
+        { img: "vertical_ribbon",        lbl: "enregistrer" },
+        { img: "alpha",                  lbl: "fermer" },
+        { img: "left_right_top",         lbl: "haut page" },
+        { img: "bottom_top",             lbl: "monter" },
+        { img: "top_down_arch",          lbl: "nouv. onglet" },
+        { img: "right_left_arch",        lbl: "onglet prcdt." },
+        { img: "left_right_arch",        lbl: "onglet suiv." },
+        { img: "undo",                   lbl: "accueil" },
+        { img: "right_left",             lbl: "page prcdte" },
+        { img: "left_right",             lbl: "page suiv." },
+        { img: "magnifying_glass",       lbl: "rechercher" },
+        { img: "top_right_bottom_left",  lbl: "réduire" },
+        { img: "clockwise_circle",       lbl: "zoomer" }
       ];
-      const root = document.getElementById("root");
-      for (const g of GROUPS) {
-        if (g.title) {
-          const h = document.createElement("div");
-          h.className = "group-title"; h.textContent = g.title;
-          root.appendChild(h);
-        }
-        const grid = document.createElement("div");
-        grid.className = "grid";
-        for (const it of g.items) {
-          const c = document.createElement("div"); c.className = "cell";
-          const img = document.createElement("img");
-          img.src = "../img/" + it.img + ".png";
-          img.alt = "";
-          img.onerror = () => { img.style.display = "none"; };
-          const l = document.createElement("div"); l.className = "lbl"; l.textContent = it.lbl;
-          c.appendChild(img); c.appendChild(l); grid.appendChild(c);
-        }
-        root.appendChild(grid);
+      const grid = document.getElementById("grid");
+      const preview = document.getElementById("preview");
+      let activeCell = null;
+      function showPreview(name, lbl) {
+        preview.innerHTML = "";
+        const img = document.createElement("img");
+        // Cache-bust pour forcer un nouveau cycle d'animation à chaque clic.
+        img.src = "../img/" + name + ".gif?t=" + Date.now();
+        img.alt = lbl;
+        img.onerror = () => { img.src = "../img/" + name + ".png"; };
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = lbl;
+        preview.appendChild(img);
+        preview.appendChild(label);
+      }
+      for (const it of ITEMS) {
+        const c = document.createElement("div");
+        c.className = "cell";
+        const img = document.createElement("img");
+        img.src = "../img/" + it.img + ".png";
+        img.alt = "";
+        img.onerror = () => { img.style.display = "none"; };
+        const l = document.createElement("div");
+        l.className = "lbl";
+        l.textContent = it.lbl;
+        c.appendChild(img);
+        c.appendChild(l);
+        c.addEventListener("click", () => {
+          if (activeCell) activeCell.classList.remove("active");
+          c.classList.add("active");
+          activeCell = c;
+          showPreview(it.img, it.lbl);
+        });
+        grid.appendChild(c);
       }
     </script>
   </body>
