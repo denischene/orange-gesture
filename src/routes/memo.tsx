@@ -37,7 +37,7 @@ const GESTURES: Gesture[] = [
   { name: "left_right_top",        title: "Haut de page",                  sequence: "RU",                                                     dot: "none" },
   { name: "right_left",            title: "Page précédente",               longTitle: "Page précédente répétée",      sequence: "L",            dot: "left" },
   { name: "left_right",            title: "Page suivante",                 longTitle: "Page suivante répétée",        sequence: "R",            dot: "right" },
-  { name: "undo",                  title: "Page d'accueil du site",        longTitle: "Page d'accueil du navigateur", sequence: "LURDR",        dot: "bottom-right", custom: "home" },
+  { name: "right_left_triangle",   title: "Page d'accueil du site",        longTitle: "Page d'accueil du navigateur", sequence: "LURDR",        dot: "bottom-right" },
   { name: "clockwise_circle",      title: "Zoomer",                        longTitle: "Zoom progressif (+10%)",       sequence: "DRDDLLLUURUR", dot: "top-right" },
   { name: "anticlockwise_circle",  title: "Dézoomer",                      longTitle: "Dézoom progressif (−10%)",     sequence: "LDLDDRRULUUL", dot: "top-left" },
   { name: "bottom_left_top_right", title: "Agrandir fenêtre",              longTitle: "État fenêtre suivant",         sequence: "UR",           dot: "top-right" },
