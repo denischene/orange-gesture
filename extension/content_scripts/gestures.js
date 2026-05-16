@@ -30,7 +30,44 @@
     if (msg?.type === "ogc.pingLongPress") {
       return Promise.resolve({ active: longPressActive });
     }
+    if (msg?.type === "ogc.adoptLongPress") {
+      active = true;
+      longPressFired = true;
+      longPressActive = true;
+      return Promise.resolve({ active: true });
+    }
+    if (msg?.type === "ogc.toggleHelpPanel") {
+      toggleHelpPanel();
+      return Promise.resolve({ ok: true });
+    }
   });
+
+  function stopLongPressRepeat() {
+    const shouldNotify = longPressActive || longPressFired;
+    longPressActive = false;
+    if (shouldNotify) {
+      browser.runtime.sendMessage({ type: "ogc.repeatStop" }).catch(() => {});
+    }
+  }
+
+  function toggleHelpPanel() {
+    const id = "__ogc_help_panel__";
+    const existing = document.getElementById(id);
+    if (existing) { existing.remove(); return; }
+    const panel = document.createElement("div");
+    panel.id = id;
+    panel.style.cssText = [
+      "position:fixed", "top:0", "right:0", "width:min(340px,90vw)",
+      "height:100vh", "z-index:2147483647", "background:#fff",
+      "box-shadow:-8px 0 24px rgba(0,0,0,.22)", "border-left:1px solid #ddd"
+    ].join(";");
+    const frame = document.createElement("iframe");
+    frame.src = browser.runtime.getURL("sidebar/sidebar.html");
+    frame.title = "OGC — Aide gestes";
+    frame.style.cssText = "width:100%;height:100%;border:0;display:block";
+    panel.appendChild(frame);
+    document.documentElement.appendChild(panel);
+  }
 
   function buildContext() {
     const sel = window.getSelection?.()?.toString?.() ?? "";
@@ -75,6 +112,7 @@
       browser.runtime.sendMessage({
         type: "ogc.stroke",
         points: points.slice(),
+        actionHint: window.OGC_VOCABULARY?.[seq] || null,
         context: { ...buildContext(), longPress: true }
       });
     }, LONG_PRESS_MS);
@@ -112,17 +150,13 @@
   }
 
   function onUp(e) {
-    if (!active) return;
+    if (!active) { stopLongPressRepeat(); return; }
     active = false;
     clearTimers();
-    longPressActive = false;
     const previewSeq = recognizer.sequence();
     if (settings.trails) window.OGC_Trails?.end();
     setTimeout(() => window.OGC_Tooltips?.hide(), 1500);
-    if (longPressFired) {
-      // Stop background-driven repetition.
-      browser.runtime.sendMessage({ type: "ogc.repeatStop" }).catch(() => {});
-    }
+    if (longPressFired) stopLongPressRepeat();
     if (previewSeq.length > 0) {
       suppressContext = true;
       e.preventDefault();
@@ -130,6 +164,7 @@
       browser.runtime.sendMessage({
         type: "ogc.stroke",
         points: points.slice(),
+        actionHint: window.OGC_VOCABULARY?.[previewSeq] || null,
         context: { ...buildContext(), longPress: false }
       });
     }
@@ -143,13 +178,12 @@
   window.addEventListener("pointermove", onMove, true);
   window.addEventListener("pointerup", onUp, true);
   window.addEventListener("pointercancel", () => {
-    if (!active) { longPressActive = false; return; }
-    active = false; longPressActive = false; clearTimers();
-    browser.runtime.sendMessage({ type: "ogc.repeatStop" }).catch(() => {});
+    if (!active) { stopLongPressRepeat(); return; }
+    active = false; clearTimers(); stopLongPressRepeat();
   }, true);
   window.addEventListener("blur", () => {
-    longPressActive = false;
-    browser.runtime.sendMessage({ type: "ogc.repeatStop" }).catch(() => {});
+    active = false;
+    clearTimers();
   });
   window.addEventListener("contextmenu", onContext, true);
 })();

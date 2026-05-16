@@ -156,21 +156,24 @@ const ACTIONS = {
       : "https://www.google.com/";
     return browser.tabs.create({ url });
   },
-  "help.toggle":    async () => {
+  "help.toggle":    async (tab) => {
     try {
       const sa = browser.sidebarAction;
-      if (!sa) return;
-      // Préférer open/close explicites pour fiabiliser la bascule
-      // (toggle() exige un user-gesture parfois perdu via messaging).
+      if (!sa) return browser.tabs.sendMessage(tab.id, { type: "ogc.toggleHelpPanel" }).catch(() => {});
+      // Appeler toggle() en tout premier : sur certains navigateurs,
+      // l'activation utilisateur est perdue après un await intermédiaire.
+      if (typeof sa.toggle === "function") return sa.toggle();
+      const win = await browser.windows.getCurrent().catch(() => null);
+      const details = win?.id ? { windowId: win.id } : {};
       if (typeof sa.isOpen === "function") {
-        const open = await sa.isOpen({});
-        if (open) return sa.close();
-        return sa.open();
+        const open = await sa.isOpen(details);
+        return open ? sa.close() : sa.open();
       }
-      return sa.toggle?.();
+      return sa.open?.();
     } catch (e) {
       console.warn("[OGC] help.toggle failed", e);
-      try { await browser.sidebarAction.toggle(); } catch {}
+      try { await browser.sidebarAction.open(); }
+      catch { await browser.tabs.sendMessage(tab.id, { type: "ogc.toggleHelpPanel" }).catch(() => {}); }
     }
   },
   "tab.new":        async (tab, ctx) => {
@@ -213,9 +216,14 @@ const ACTIONS = {
 async function cycleTab(tab, delta) {
   const tabs = await browser.tabs.query({ currentWindow: true });
   const sorted = tabs.sort((a, b) => a.index - b.index);
+  if (sorted.length < 2) return false;
   const i = sorted.findIndex((t) => t.id === tab.id);
+  if (i < 0) return false;
   const next = sorted[(i + delta + sorted.length) % sorted.length];
-  if (next) await browser.tabs.update(next.id, { active: true });
+  if (!next || next.id === tab.id) return false;
+  await browser.tabs.update(next.id, { active: true });
+  try { await browser.tabs.sendMessage(next.id, { type: "ogc.adoptLongPress" }); } catch {}
+  return { pressTabId: next.id };
 }
 
 async function scrollExtreme(tab, where) {
@@ -292,7 +300,7 @@ async function cycleWindowState(delta) {
  * REPEAT_MS puis on demande à l'onglet actif si l'utilisateur maintient
  * toujours l'appui. Si oui, on répète. Sinon, on s'arrête.
  */
-const REPEAT_MS = 2000;
+const REPEAT_MS = 1000;
 let activeRepeat = null;
 function stopRepeat() {
   if (activeRepeat) {
@@ -308,6 +316,11 @@ async function pingLongPress(tabId) {
   } catch { return false; }
 }
 
+function isNavigationRepeatAction(action) {
+  return action === "page.back" || action === "page.forward" ||
+    action === "tab.next" || action === "tab.prev" || action === "tab.close";
+}
+
 async function getCurrentTab(originTab) {
   try {
     const wid = originTab?.windowId;
@@ -316,21 +329,22 @@ async function getCurrentTab(originTab) {
   } catch { return originTab; }
 }
 
-function scheduleRepeat(handler, originTab, ctx, token) {
+function scheduleRepeat(entry, handler, originTab, ctx, token) {
   if (!activeRepeat || activeRepeat.token !== token) return;
   activeRepeat.timer = setTimeout(async () => {
     if (!activeRepeat || activeRepeat.token !== token) return;
-    const target = await getCurrentTab(originTab);
+    const target = isNavigationRepeatAction(entry.action) ? await getCurrentTab(originTab) : originTab;
     if (!target) { stopRepeat(); return; }
-    const stillPressing = await pingLongPress(target.id);
+    const stillPressing = await pingLongPress(activeRepeat.pressTabId);
     if (!stillPressing) { stopRepeat(); return; }
     let cont = true;
     try {
       const r = await handler(target, ctx);
       if (r === false) cont = false;
+      else if (r?.pressTabId && activeRepeat?.token === token) activeRepeat.pressTabId = r.pressTabId;
     } catch (err) { console.warn("[OGC] repeat failed", err); }
     if (!cont) { stopRepeat(); return; }
-    scheduleRepeat(handler, originTab, ctx, token);
+    scheduleRepeat(entry, handler, originTab, ctx, token);
   }, REPEAT_MS);
 }
 
@@ -353,7 +367,8 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
 
   // Prefer the native exact match embedded in the WASM; fall back to the JS
   // fuzzy matcher only when the C++ table has no exact hit.
-  const entry = (nativeAction && ENTRY_BY_ACTION[nativeAction]) || findVocab(sequence);
+  const hintedEntry = typeof msg.actionHint === "string" ? ENTRY_BY_ACTION[msg.actionHint] : null;
+  const entry = hintedEntry || (nativeAction && ENTRY_BY_ACTION[nativeAction]) || findVocab(sequence);
   if (!entry) return;
 
   const handler = ACTIONS[entry.action];
@@ -375,8 +390,8 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   // gestes répétables, sauf si la première exécution a déjà demandé l'arrêt.
   if (ctx.longPress && entry.repeat && firstResult !== false) {
     const token = Symbol("repeat");
-    activeRepeat = { token, timer: null };
-    scheduleRepeat(handler, tab, ctx, token);
+    activeRepeat = { token, timer: null, pressTabId: tab.id };
+    scheduleRepeat(entry, handler, tab, ctx, token);
   }
 });
 
