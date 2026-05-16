@@ -25,8 +25,32 @@ for (const g of GESTURES.gestures) {
 }
 
 const DEFAULT_SETTINGS = {
-  enabled: true, button: 2, trails: true, tooltips: true, sensitivity: 24
+  enabled: true, button: 2, trails: true, tooltips: true, sensitivity: 24,
+  repeatEnabled: true
 };
+
+let SETTINGS = { ...DEFAULT_SETTINGS };
+let CUSTOM_VOCAB = {}; // sequence -> entry (issu des gestes personnalisés)
+
+async function refreshSettings() {
+  const { settings } = await browser.storage.local.get("settings");
+  SETTINGS = { ...DEFAULT_SETTINGS, ...(settings || {}) };
+}
+async function refreshCustom() {
+  const { customGestures = {} } = await browser.storage.local.get("customGestures");
+  const next = {};
+  for (const [actionId, seq] of Object.entries(customGestures || {})) {
+    const entry = ENTRY_BY_ACTION[actionId];
+    if (entry && typeof seq === "string" && seq.length > 0) next[seq] = entry;
+  }
+  CUSTOM_VOCAB = next;
+}
+refreshSettings();
+refreshCustom();
+browser.storage.onChanged.addListener((changes) => {
+  if (changes.settings) refreshSettings();
+  if (changes.customGestures) refreshCustom();
+});
 
 browser.runtime.onInstalled.addListener(async () => {
   const { settings } = await browser.storage.local.get("settings");
