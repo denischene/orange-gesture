@@ -25,8 +25,32 @@ for (const g of GESTURES.gestures) {
 }
 
 const DEFAULT_SETTINGS = {
-  enabled: true, button: 2, trails: true, tooltips: true, sensitivity: 24
+  enabled: true, button: 2, trails: true, tooltips: true, sensitivity: 24,
+  repeatEnabled: true
 };
+
+let SETTINGS = { ...DEFAULT_SETTINGS };
+let CUSTOM_VOCAB = {}; // sequence -> entry (issu des gestes personnalisés)
+
+async function refreshSettings() {
+  const { settings } = await browser.storage.local.get("settings");
+  SETTINGS = { ...DEFAULT_SETTINGS, ...(settings || {}) };
+}
+async function refreshCustom() {
+  const { customGestures = {} } = await browser.storage.local.get("customGestures");
+  const next = {};
+  for (const [actionId, seq] of Object.entries(customGestures || {})) {
+    const entry = ENTRY_BY_ACTION[actionId];
+    if (entry && typeof seq === "string" && seq.length > 0) next[seq] = entry;
+  }
+  CUSTOM_VOCAB = next;
+}
+refreshSettings();
+refreshCustom();
+browser.storage.onChanged.addListener((changes) => {
+  if (changes.settings) refreshSettings();
+  if (changes.customGestures) refreshCustom();
+});
 
 browser.runtime.onInstalled.addListener(async () => {
   const { settings } = await browser.storage.local.get("settings");
@@ -396,7 +420,8 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   // Prefer the native exact match embedded in the WASM; fall back to the JS
   // fuzzy matcher only when the C++ table has no exact hit.
   const hintedEntry = typeof msg.actionHint === "string" ? ENTRY_BY_ACTION[msg.actionHint] : null;
-  const entry = hintedEntry || (nativeAction && ENTRY_BY_ACTION[nativeAction]) || findVocab(sequence);
+  const customEntry = CUSTOM_VOCAB[sequence] || null;
+  const entry = hintedEntry || customEntry || (nativeAction && ENTRY_BY_ACTION[nativeAction]) || findVocab(sequence);
   if (!entry) return;
 
   const handler = ACTIONS[entry.action];
@@ -416,7 +441,7 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
 
   // Démarre la boucle de répétition pilotée par le background pour les
   // gestes répétables, sauf si la première exécution a déjà demandé l'arrêt.
-  if (ctx.longPress && entry.repeat && firstResult !== false) {
+  if (ctx.longPress && entry.repeat && firstResult !== false && SETTINGS.repeatEnabled !== false) {
     const token = Symbol("repeat");
     activeRepeat = { token, timer: null, pressTabId: tab.id };
     scheduleRepeat(entry, handler, tab, ctx, token);

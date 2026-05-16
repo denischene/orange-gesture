@@ -56,6 +56,14 @@ function Help() {
         </p>
       </Section>
 
+      <Section title="Limites">
+        <p className="text-muted-foreground">
+          L'extension Orange Gesture Control ne fonctionne pas sur les pages
+          natives du navigateur comme les Paramètres, l'Historique, la Page
+          d'accueil du navigateur.
+        </p>
+      </Section>
+
       <Section title="Configuration">
         <p className="text-muted-foreground">
           Les préférences (bouton de tracé, sensibilité, affichage des

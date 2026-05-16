@@ -1,69 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="utf-8" />
     <title>Orange Gesture Control — Options</title>
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
-    <h1 data-i18n="optTitle">Orange Gesture Control — Options</h1>
-    <form id="ogc-options">
-      <label><input type="checkbox" name="enabled" /> <span data-i18n="optEnable">Enable gestures</span></label>
-      <label><input type="checkbox" name="trails" /> <span data-i18n="optTrails">Show gesture trail</span></label>
-      <label><input type="checkbox" name="tooltips" /> <span data-i18n="optTooltips">Show tooltips</span></label>
-      <label><span data-i18n="optButton">Trigger button</span>
-        <select name="button">
-          <option value="2">Right</option>
-          <option value="1">Middle</option>
-          <option value="0">Left</option>
-        </select>
-      </label>
-      <label><span data-i18n="optSensitivity">Recognition sensitivity (px)</span>
-        <input type="number" name="sensitivity" min="8" max="80" />
-      </label>
-      <button type="submit">Save</button>
-    </form>
-    <h2>Vocabulary</h2>
-    <pre id="vocab"></pre>
-    <script src="../lib/vocabulary.js"></script>
+    <header class="ogc-hero">
+      <div class="ogc-hero-inner">
+        <div class="ogc-brand">
+          <span class="ogc-dot"></span>
+          <span>Orange Gesture Control</span>
+        </div>
+        <h1>Préférences</h1>
+        <p class="ogc-lead">
+          Personnalisez le bouton de tracé, l'affichage du geste, la
+          répétition automatique et vos propres tracés.
+        </p>
+      </div>
+    </header>
+
+    <main class="ogc-main">
+      <section class="ogc-card">
+        <h2>Réglages généraux</h2>
+
+        <form id="ogc-options" class="ogc-form">
+          <fieldset class="ogc-field">
+            <legend>Bouton souris utilisé pour produire le geste</legend>
+            <div class="ogc-segmented" role="radiogroup">
+              <label><input type="radio" name="button" value="0" /><span>Gauche</span></label>
+              <label><input type="radio" name="button" value="1" /><span>Milieu</span></label>
+              <label><input type="radio" name="button" value="2" /><span>Droit</span></label>
+            </div>
+            <p class="ogc-hint">Par défaut le bouton droit est actif.</p>
+          </fieldset>
+
+          <fieldset class="ogc-field">
+            <legend>Trace du geste</legend>
+            <div class="ogc-segmented" role="radiogroup">
+              <label><input type="radio" name="trails" value="on" /><span>Afficher</span></label>
+              <label><input type="radio" name="trails" value="off" /><span>Masquer</span></label>
+            </div>
+            <p class="ogc-hint">Par défaut la trace est affichée.</p>
+          </fieldset>
+
+          <fieldset class="ogc-field">
+            <legend>Gestes répétés</legend>
+            <div class="ogc-segmented" role="radiogroup">
+              <label><input type="radio" name="repeatEnabled" value="on" /><span>Activables</span></label>
+              <label><input type="radio" name="repeatEnabled" value="off" /><span>Bloqués</span></label>
+            </div>
+            <p class="ogc-hint">Par défaut les répétitions en appui long sont activées.</p>
+          </fieldset>
+
+          <div class="ogc-actions">
+            <button type="submit" class="ogc-btn ogc-btn-primary">Enregistrer</button>
+            <span id="ogc-save-status" class="ogc-status" aria-live="polite"></span>
+          </div>
+        </form>
+      </section>
+
+      <section class="ogc-card">
+        <h2>Gestes personnalisés</h2>
+        <p class="ogc-lead-sm">
+          Sélectionnez une commande puis tracez votre propre geste cinq fois.
+          L'extension vérifie la cohérence des cinq tracés avant de proposer
+          la sauvegarde.
+        </p>
+        <div id="ogc-custom-list" class="ogc-custom-list"></div>
+      </section>
+    </main>
+
+    <!-- Overlay du wizard de personnalisation -->
+    <div id="ogc-wizard" class="ogc-wizard" hidden>
+      <div class="ogc-wizard-panel" role="dialog" aria-modal="true" aria-labelledby="ogc-wizard-title">
+        <header class="ogc-wizard-head">
+          <div>
+            <h3 id="ogc-wizard-title">Personnaliser un geste</h3>
+            <p id="ogc-wizard-sub" class="ogc-hint"></p>
+          </div>
+          <button type="button" id="ogc-wizard-close" class="ogc-btn ogc-btn-ghost" aria-label="Fermer">✕</button>
+        </header>
+
+        <div class="ogc-wizard-body">
+          <div class="ogc-wizard-progress">
+            <span>Tracé <strong id="ogc-wizard-step">1</strong> / 5</span>
+            <span id="ogc-wizard-seq" class="ogc-seq"></span>
+          </div>
+          <canvas id="ogc-wizard-canvas" width="520" height="320"></canvas>
+          <p id="ogc-wizard-msg" class="ogc-wizard-msg"></p>
+        </div>
+
+        <footer class="ogc-wizard-foot">
+          <button type="button" id="ogc-wizard-reset" class="ogc-btn ogc-btn-ghost">Recommencer</button>
+          <div class="ogc-spacer"></div>
+          <button type="button" id="ogc-wizard-cancel" class="ogc-btn ogc-btn-ghost">Annuler</button>
+          <button type="button" id="ogc-wizard-save" class="ogc-btn ogc-btn-primary" disabled>Sauvegarder</button>
+        </footer>
+      </div>
+    </div>
+
+    <script src="../lib/recognizer.js"></script>
     <script src="options.js"></script>
   </body>
 </html>
-*** Add File: extension/options/options.css
-body { font: 14px/1.5 system-ui, sans-serif; max-width: 640px; margin: 32px auto; padding: 0 16px; color: #222; }
-h1 { color: #ff7900; }
-form { display: grid; gap: 12px; }
-label { display: flex; gap: 8px; align-items: center; }
-button { background: #ff7900; color: #fff; border: 0; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
-pre { background: #f4f4f4; padding: 12px; border-radius: 4px; }
-*** Add File: extension/options/options.js
-const form = document.getElementById("ogc-options");
-
-document.querySelectorAll("[data-i18n]").forEach((el) => {
-  const msg = browser.i18n.getMessage(el.dataset.i18n);
-  if (msg) el.textContent = msg;
-});
-
-(async () => {
-  const { settings = {} } = await browser.storage.local.get("settings");
-  for (const [k, v] of Object.entries(settings)) {
-    const el = form.elements[k];
-    if (!el) continue;
-    if (el.type === "checkbox") el.checked = !!v;
-    else el.value = v;
-  }
-  document.getElementById("vocab").textContent = JSON.stringify(OGC_VOCABULARY, null, 2);
-})();
-
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const fd = new FormData(form);
-  const settings = {
-    enabled: form.elements.enabled.checked,
-    trails: form.elements.trails.checked,
-    tooltips: form.elements.tooltips.checked,
-    button: Number(fd.get("button")),
-    sensitivity: Number(fd.get("sensitivity"))
-  };
-  await browser.storage.local.set({ settings });
-});
