@@ -1,7 +1,6 @@
 /* Gesture capture — long press fires while still holding the button. */
 (function () {
   const LONG_PRESS_MS = 480;
-  const REPEAT_MS     = 450;
 
   const recognizer = new OGC_Recognizer();
   const points = [];
@@ -10,7 +9,6 @@
   let downTarget = null;
   let lastMoveAt = 0;
   let longPressTimer = null;
-  let repeatTimer = null;
   let longPressFired = false;
   // Premier hyperlien rencontré pendant le geste (au démarrage ou en cours).
   let firstLinkHref = null;
@@ -51,7 +49,6 @@
 
   function clearTimers() {
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-    if (repeatTimer)    { clearInterval(repeatTimer);   repeatTimer = null; }
   }
 
   function scheduleLongPress() {
@@ -68,14 +65,6 @@
         points: points.slice(),
         context: { ...buildContext(), longPress: true }
       });
-      repeatTimer = setInterval(() => {
-        if (!active) { clearTimers(); return; }
-        browser.runtime.sendMessage({
-          type: "ogc.stroke",
-          points: points.slice(),
-          context: { ...buildContext(), longPress: true, repeat: true }
-        });
-      }, REPEAT_MS);
     }, LONG_PRESS_MS);
   }
 
@@ -116,6 +105,10 @@
     const previewSeq = recognizer.sequence();
     if (settings.trails) window.OGC_Trails?.end();
     setTimeout(() => window.OGC_Tooltips?.hide(), 1500);
+    if (longPressFired) {
+      // Stop background-driven repetition.
+      browser.runtime.sendMessage({ type: "ogc.repeatStop" }).catch(() => {});
+    }
     if (previewSeq.length > 0) {
       suppressContext = true;
       e.preventDefault();
