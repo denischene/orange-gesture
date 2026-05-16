@@ -7,7 +7,7 @@ const ITEMS = [
   { img: "left_right_top",         lbl: "haut page" },
   { img: "right_left",             lbl: "page prcdte" },
   { img: "left_right",             lbl: "page suiv." },
-  { img: "undo",                   lbl: "accueil" },
+  { img: "accueil",                lbl: "accueil" },
   { img: "clockwise_circle",       lbl: "zoomer" },
   { img: "anticlockwise_circle",   lbl: "dézoomer" },
   { img: "bottom_left_top_right",  lbl: "agrandir" },
