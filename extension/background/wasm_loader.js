@@ -43,7 +43,7 @@ function recognizeStrokeJS(points) {
 function instantiate() {
   if (modulePromise) return modulePromise;
   const url = browser.runtime.getURL("wasm/ogc_recognizer.wasm");
-  const memory = new WebAssembly.Memory({ initial: 2, maximum: 2 });
+  const memory = new WebAssembly.Memory({ initial: 4, maximum: 4 });
   const imports = { env: { memory }, wasi_snapshot_preview1: {} };
 
   modulePromise = (async () => {
@@ -64,10 +64,24 @@ function instantiate() {
       addPoint:     exp.ogc_add_point,
       tokenCount:   exp.ogc_token_count,
       tokenAt:      exp.ogc_token_at,
-      bufferPtr:    exp.ogc_buffer
+      bufferPtr:    exp.ogc_buffer,
+      match:        exp.ogc_match,
+      matchCurrent: exp.ogc_match_current,
+      actionName:   exp.ogc_action_name,
+      vocabLen:     exp.ogc_vocab_len,
+      vocabSeq:     exp.ogc_vocab_seq,
+      vocabAction:  exp.ogc_vocab_action
     };
   })();
   return modulePromise;
+}
+
+function readCString(memory, ptr) {
+  if (!ptr) return "";
+  const view = new Uint8Array(memory.buffer);
+  let end = ptr;
+  while (view[end] !== 0) end++;
+  return new TextDecoder("utf-8").decode(view.subarray(ptr, end));
 }
 
 export async function recognizeStroke(points) {
@@ -97,6 +111,33 @@ export async function recognizeStroke(points) {
     wasmDisabled = true;
     modulePromise = null;
     return recognizeStrokeJS(points);
+  }
+}
+
+/**
+ * Tokenize + native exact match in one round-trip.
+ * Returns { sequence, actionId, actionName } where actionId is null if no
+ * embedded entry matched (caller can then fall back to fuzzy matching in JS).
+ */
+export async function recognizeAction(points) {
+  const sequence = await recognizeStroke(points);
+  if (wasmDisabled) return { sequence, actionId: null, actionName: null };
+  try {
+    const wasm = await instantiate();
+    if (typeof wasm.matchCurrent !== "function") {
+      return { sequence, actionId: null, actionName: null };
+    }
+    const id = wasm.matchCurrent();
+    if (id === 0xffff) return { sequence, actionId: null, actionName: null };
+    const namePtr = wasm.actionName(id);
+    return {
+      sequence,
+      actionId: id,
+      actionName: readCString(wasm.memory, namePtr)
+    };
+  } catch (err) {
+    console.warn("[OGC] native match failed:", err);
+    return { sequence, actionId: null, actionName: null };
   }
 }
 

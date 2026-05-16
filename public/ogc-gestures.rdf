@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:ogc="http://orange-gesture-control.org/vocab#"
+  xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <ogc:Vocabulary rdf:about="urn:ogc:vocab:2.0.0">
+    <dc:title>Orange Gesture Control vocabulary</dc:title>
+    <dc:description>Orange Gesture Control — vocabulaire des gestes (source unique de vérité). Tout dérivé : runtime JS, en-tête C++ embarqué dans le WASM, exports publics JSON et RDF.</dc:description>
+    <ogc:version>2.0.0</ogc:version>
+  </ogc:Vocabulary>
+  <ogc:Gesture rdf:about="urn:ogc:action:page.back">
+    <ogc:action>page.back</ogc:action>
+    <ogc:label xml:lang="fr">Page précédente</ogc:label>
+    <ogc:longLabel xml:lang="fr">Page précédente (répété)</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
+    <ogc:sequence>L</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:page.forward">
+    <ogc:action>page.forward</ogc:action>
+    <ogc:label xml:lang="fr">Page suivante</ogc:label>
+    <ogc:longLabel xml:lang="fr">Page suivante (répété)</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
+    <ogc:sequence>R</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:scroll.up">
+    <ogc:action>scroll.up</ogc:action>
+    <ogc:label xml:lang="fr">Monter</ogc:label>
+    <ogc:longLabel xml:lang="fr">Monter (répété)</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
+    <ogc:sequence>U</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:scroll.down">
+    <ogc:action>scroll.down</ogc:action>
+    <ogc:label xml:lang="fr">Descendre</ogc:label>
+    <ogc:longLabel xml:lang="fr">Descendre (répété)</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
+    <ogc:sequence>D</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:page.top">
+    <ogc:action>page.top</ogc:action>
+    <ogc:label xml:lang="fr">Haut de page</ogc:label>
+    <ogc:sequence>RU</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:page.bottom">
+    <ogc:action>page.bottom</ogc:action>
+    <ogc:label xml:lang="fr">Bas de page</ogc:label>
+    <ogc:sequence>RD</ogc:sequence>
+    <ogc:alias>RDRD</ogc:alias>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:site.home">
+    <ogc:action>site.home</ogc:action>
+    <ogc:label xml:lang="fr">Accueil du site</ogc:label>
+    <ogc:longLabel xml:lang="fr">Accueil du navigateur</ogc:longLabel>
+    <ogc:sequence>LURDR</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:search.web">
+    <ogc:action>search.web</ogc:action>
+    <ogc:label xml:lang="fr">Rechercher sur internet</ogc:label>
+    <ogc:longLabel xml:lang="fr">Rechercher dans la page</ogc:longLabel>
+    <ogc:sequence>URUURRDLDDL</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:help.toggle">
+    <ogc:action>help.toggle</ogc:action>
+    <ogc:label xml:lang="fr">Aide</ogc:label>
+    <ogc:sequence>UURRDDLDD</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:tab.new">
+    <ogc:action>tab.new</ogc:action>
+    <ogc:label xml:lang="fr">Nouvel onglet</ogc:label>
+    <ogc:sequence>DUURRDRD</ogc:sequence>
+    <ogc:alias>DUURRDR</ogc:alias>
+    <ogc:alias>DUURDRD</ogc:alias>
+    <ogc:alias>DUURRDRR</ogc:alias>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:tab.next">
+    <ogc:action>tab.next</ogc:action>
+    <ogc:label xml:lang="fr">Onglet suivant</ogc:label>
+    <ogc:longLabel xml:lang="fr">Onglet suivant (répété)</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
+    <ogc:sequence>URRDRD</ogc:sequence>
+    <ogc:alias>UURRDR</ogc:alias>
+    <ogc:alias>UURRDRD</ogc:alias>
+    <ogc:alias>UURDRD</ogc:alias>
+    <ogc:alias>UURRDRR</ogc:alias>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:tab.prev">
+    <ogc:action>tab.prev</ogc:action>
+    <ogc:label xml:lang="fr">Onglet précédent</ogc:label>
+    <ogc:longLabel xml:lang="fr">Onglet précédent (répété)</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
+    <ogc:sequence>DDLLULU</ogc:sequence>
+    <ogc:alias>UULLDLD</ogc:alias>
+    <ogc:alias>UULDLD</ogc:alias>
+    <ogc:alias>UULLDL</ogc:alias>
+    <ogc:alias>UULLDLL</ogc:alias>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:tab.close">
+    <ogc:action>tab.close</ogc:action>
+    <ogc:label xml:lang="fr">Fermer l&apos;onglet</ogc:label>
+    <ogc:longLabel xml:lang="fr">Fermer l&apos;onglet (répété)</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
+    <ogc:sequence>DRULDR</ogc:sequence>
+    <ogc:alias>DLULLUURRDR</ogc:alias>
+    <ogc:alias>DLLULLUURDR</ogc:alias>
+    <ogc:alias>DLLULLUURRDR</ogc:alias>
+    <ogc:alias>DDLLULLUURRDR</ogc:alias>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:window.maximize">
+    <ogc:action>window.maximize</ogc:action>
+    <ogc:label xml:lang="fr">Agrandir la fenêtre</ogc:label>
+    <ogc:longLabel xml:lang="fr">État fenêtre suivant</ogc:longLabel>
+    <ogc:sequence>UR</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:window.minimize">
+    <ogc:action>window.minimize</ogc:action>
+    <ogc:label xml:lang="fr">Réduire la fenêtre</ogc:label>
+    <ogc:longLabel xml:lang="fr">État fenêtre précédent</ogc:longLabel>
+    <ogc:sequence>DL</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:zoom.in">
+    <ogc:action>zoom.in</ogc:action>
+    <ogc:label xml:lang="fr">Zoomer</ogc:label>
+    <ogc:longLabel xml:lang="fr">Zoom progressif</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
+    <ogc:sequence>DRDDLLLUURUR</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:zoom.out">
+    <ogc:action>zoom.out</ogc:action>
+    <ogc:label xml:lang="fr">Dézoomer</ogc:label>
+    <ogc:longLabel xml:lang="fr">Dézoom progressif</ogc:longLabel>
+    <ogc:repeat>true</ogc:repeat>
+    <ogc:sequence>LDLDDRRULUUL</ogc:sequence>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:bookmarks.add">
+    <ogc:action>bookmarks.add</ogc:action>
+    <ogc:label xml:lang="fr">Ajouter aux favoris</ogc:label>
+    <ogc:sequence>LRULRD</ogc:sequence>
+    <ogc:alias>RURRDR</ogc:alias>
+    <ogc:alias>RURDDR</ogc:alias>
+    <ogc:alias>RURDLDR</ogc:alias>
+    <ogc:alias>RURDR</ogc:alias>
+    <ogc:alias>RURDDRR</ogc:alias>
+    <ogc:alias>RURUDDRR</ogc:alias>
+    <ogc:alias>URUDDRR</ogc:alias>
+  </ogc:Gesture>
+  <ogc:Gesture rdf:about="urn:ogc:action:page.saveAs">
+    <ogc:action>page.saveAs</ogc:action>
+    <ogc:label xml:lang="fr">Enregistrer sous…</ogc:label>
+    <ogc:sequence>DDRURUULL</ogc:sequence>
+    <ogc:alias>DDRRURULLL</ogc:alias>
+    <ogc:alias>DDRRURULL</ogc:alias>
+    <ogc:alias>DDRRURUUUL</ogc:alias>
+  </ogc:Gesture>
+</rdf:RDF>

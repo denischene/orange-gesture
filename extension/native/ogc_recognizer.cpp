@@ -10,6 +10,8 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <string.h>
+#include "ogc_vocab.h"
 
 #define MAX_TOKENS 64
 #define MIN_SEGMENT 24.0
@@ -75,5 +77,49 @@ uint8_t ogc_token_at(uint32_t i) {
 
 // Pointer to the internal token buffer (for bulk reads via HEAPU8).
 uintptr_t ogc_buffer(void) { return (uintptr_t)g_tokens; }
+
+/* ---------- exact matching against the embedded vocabulary ---------- */
+
+// Build the current token buffer as an ASCII string (R/U/L/D + UR/UL/DR/DL).
+// Writes into `out` (up to out_sz bytes including the terminator) and returns
+// the resulting string length (excluding terminator).
+static uint32_t serialize_current(char* out, uint32_t out_sz) {
+    static const char* const NAMES[8] = { "R","UR","U","UL","L","DL","D","DR" };
+    uint32_t n = 0;
+    for (uint32_t i = 0; i < g_count && n + 3 < out_sz; i++) {
+        const char* s = NAMES[g_tokens[i] & 7];
+        while (*s && n + 1 < out_sz) out[n++] = *s++;
+    }
+    if (n < out_sz) out[n] = '\0';
+    return n;
+}
+
+// Returns the action_id for a sequence (canonical or alias), or 0xFFFF if none.
+uint16_t ogc_match(const char* seq) {
+    if (!seq) return 0xFFFF;
+    for (uint32_t i = 0; i < OGC_VOCAB_LEN; i++) {
+        if (strcmp(seq, OGC_VOCAB[i].seq) == 0) return OGC_VOCAB[i].action_id;
+    }
+    return 0xFFFF;
+}
+
+// Match the currently buffered stroke directly. Returns 0xFFFF if no exact hit.
+uint16_t ogc_match_current(void) {
+    char buf[128];
+    serialize_current(buf, sizeof(buf));
+    return ogc_match(buf);
+}
+
+// Read-only accessors for parity with the JS side / debug tools.
+const char* ogc_action_name(uint16_t id) {
+    return (id < OGC_ACTIONS_LEN) ? OGC_ACTIONS[id] : "";
+}
+const char* ogc_vocab_seq(uint32_t i) {
+    return (i < OGC_VOCAB_LEN) ? OGC_VOCAB[i].seq : "";
+}
+uint16_t ogc_vocab_action(uint32_t i) {
+    return (i < OGC_VOCAB_LEN) ? OGC_VOCAB[i].action_id : 0xFFFF;
+}
+uint32_t ogc_vocab_len(void) { return OGC_VOCAB_LEN; }
 
 } // extern "C"
