@@ -298,7 +298,7 @@ async function cycleWindowState(delta) {
  * REPEAT_MS puis on demande à l'onglet actif si l'utilisateur maintient
  * toujours l'appui. Si oui, on répète. Sinon, on s'arrête.
  */
-const REPEAT_MS = 2000;
+const REPEAT_MS = 1000;
 let activeRepeat = null;
 function stopRepeat() {
   if (activeRepeat) {
@@ -314,6 +314,11 @@ async function pingLongPress(tabId) {
   } catch { return false; }
 }
 
+function isNavigationRepeatAction(action) {
+  return action === "page.back" || action === "page.forward" ||
+    action === "tab.next" || action === "tab.prev" || action === "tab.close";
+}
+
 async function getCurrentTab(originTab) {
   try {
     const wid = originTab?.windowId;
@@ -322,13 +327,13 @@ async function getCurrentTab(originTab) {
   } catch { return originTab; }
 }
 
-function scheduleRepeat(handler, originTab, ctx, token) {
+function scheduleRepeat(entry, handler, originTab, ctx, token) {
   if (!activeRepeat || activeRepeat.token !== token) return;
   activeRepeat.timer = setTimeout(async () => {
     if (!activeRepeat || activeRepeat.token !== token) return;
-    const target = await getCurrentTab(originTab);
+    const target = isNavigationRepeatAction(entry.action) ? await getCurrentTab(originTab) : originTab;
     if (!target) { stopRepeat(); return; }
-    const stillPressing = await pingLongPress(target.id);
+    const stillPressing = await pingLongPress(activeRepeat.pressTabId);
     if (!stillPressing) { stopRepeat(); return; }
     let cont = true;
     try {
@@ -336,7 +341,7 @@ function scheduleRepeat(handler, originTab, ctx, token) {
       if (r === false) cont = false;
     } catch (err) { console.warn("[OGC] repeat failed", err); }
     if (!cont) { stopRepeat(); return; }
-    scheduleRepeat(handler, originTab, ctx, token);
+    scheduleRepeat(entry, handler, originTab, ctx, token);
   }, REPEAT_MS);
 }
 
