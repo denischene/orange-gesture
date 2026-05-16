@@ -88,6 +88,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Orange Gesture Control" },
+      { name: "description", content: "Commande gestuelle pour navigateur web. By Orange." },
+      { property: "og:description", content: "Commande gestuelle pour navigateur web. By Orange." },
+      { name: "twitter:description", content: "Commande gestuelle pour navigateur web. By Orange." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b2759d0e-8edb-42dc-b86b-966afc16b889/id-preview-7e2be774--b63756ca-93e1-456f-b3d7-b6675083ab9c.lovable.app-1778937145845.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b2759d0e-8edb-42dc-b86b-966afc16b889/id-preview-7e2be774--b63756ca-93e1-456f-b3d7-b6675083ab9c.lovable.app-1778937145845.png" },
     ],
     links: [
       {
