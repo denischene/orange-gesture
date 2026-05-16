@@ -341,6 +341,7 @@ function scheduleRepeat(entry, handler, originTab, ctx, token) {
     try {
       const r = await handler(target, ctx);
       if (r === false) cont = false;
+      else if (r?.pressTabId && activeRepeat?.token === token) activeRepeat.pressTabId = r.pressTabId;
     } catch (err) { console.warn("[OGC] repeat failed", err); }
     if (!cont) { stopRepeat(); return; }
     scheduleRepeat(entry, handler, originTab, ctx, token);
@@ -366,7 +367,8 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
 
   // Prefer the native exact match embedded in the WASM; fall back to the JS
   // fuzzy matcher only when the C++ table has no exact hit.
-  const entry = (nativeAction && ENTRY_BY_ACTION[nativeAction]) || findVocab(sequence);
+  const hintedEntry = typeof msg.actionHint === "string" ? ENTRY_BY_ACTION[msg.actionHint] : null;
+  const entry = hintedEntry || (nativeAction && ENTRY_BY_ACTION[nativeAction]) || findVocab(sequence);
   if (!entry) return;
 
   const handler = ACTIONS[entry.action];
