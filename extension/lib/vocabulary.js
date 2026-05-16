@@ -1,42 +1,53 @@
-/* Gesture vocabulary — maps a sequence of 8 cardinal directions to an action id.
- * Directions: U (up), D (down), L (left), R (right), UL, UR, DL, DR.
- * Ported from the legacy OGC RDF vocabulary; extend freely from the options page.
- */
+/* AUTO-GÉNÉRÉ par scripts/build-gesture-exports.mjs — ne pas éditer.
+ * Source : extension/data/gestures.json
+ * Vocabulaire (séquence -> action) exposé en global pour le content script. */
 (function (root) {
-  // Mirror of the canonical map (background owns dispatch + fuzzy matching).
-  // Kept here for content-script tooltips / options page display.
   const OGC_VOCABULARY = {
-    // Page navigation (history)
-    "L":           "page.back",
-    "R":           "page.forward",
-    // Scroll one step (contextual: copy/paste on selection / input)
-    "U":           "scroll.up",
-    "D":           "scroll.down",
-    // Page extremes
-    "RU":          "page.top",
-    "RD":          "page.bottom",
-    // Site / browser home
-    "LURDR":       "site.home",
-    // Search
+    "L": "page.back",
+    "R": "page.forward",
+    "U": "scroll.up",
+    "D": "scroll.down",
+    "RU": "page.top",
+    "RD": "page.bottom",
+    "RDRD": "page.bottom",
+    "LURDR": "site.home",
     "URUURRDLDDL": "search.web",
-    // Help sidebar
-    "UURRDDLDD":   "help.toggle",
-    // Tabs
-    "DUURRDRD":    "tab.new",
-    "URRDRD":      "tab.next",
-    "DDLLULU":     "tab.prev",
-    // Close tab — alpha shape
-    "DRULDR":      "tab.close",
-    // Window state
-    "UR":          "window.maximize",
-    "DL":          "window.minimize",
-    // Zoom (10% steps)
-    "DRDDLLLUURUR":"zoom.in",
-    "LDLDDRRULUUL":"zoom.out",
-    // Bookmark current url
-    "LRULRD":      "bookmarks.add",
-    // Save link/image as
-    "DDRURUULL":   "page.saveAs"
+    "UURRDDLDD": "help.toggle",
+    "DUURRDRD": "tab.new",
+    "DUURRDR": "tab.new",
+    "DUURDRD": "tab.new",
+    "DUURRDRR": "tab.new",
+    "URRDRD": "tab.next",
+    "UURRDR": "tab.next",
+    "UURRDRD": "tab.next",
+    "UURDRD": "tab.next",
+    "UURRDRR": "tab.next",
+    "DDLLULU": "tab.prev",
+    "UULLDLD": "tab.prev",
+    "UULDLD": "tab.prev",
+    "UULLDL": "tab.prev",
+    "UULLDLL": "tab.prev",
+    "DRULDR": "tab.close",
+    "DLULLUURRDR": "tab.close",
+    "DLLULLUURDR": "tab.close",
+    "DLLULLUURRDR": "tab.close",
+    "DDLLULLUURRDR": "tab.close",
+    "UR": "window.maximize",
+    "DL": "window.minimize",
+    "DRDDLLLUURUR": "zoom.in",
+    "LDLDDRRULUUL": "zoom.out",
+    "LRULRD": "bookmarks.add",
+    "RURRDR": "bookmarks.add",
+    "RURDDR": "bookmarks.add",
+    "RURDLDR": "bookmarks.add",
+    "RURDR": "bookmarks.add",
+    "RURDDRR": "bookmarks.add",
+    "RURUDDRR": "bookmarks.add",
+    "URUDDRR": "bookmarks.add",
+    "DDRURUULL": "page.saveAs",
+    "DDRRURULLL": "page.saveAs",
+    "DDRRURULL": "page.saveAs",
+    "DDRRURUUUL": "page.saveAs"
   };
   root.OGC_VOCABULARY = OGC_VOCABULARY;
 })(typeof window !== "undefined" ? window : globalThis);
