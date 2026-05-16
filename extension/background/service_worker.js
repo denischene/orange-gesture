@@ -107,14 +107,22 @@ function findVocab(seq) {
 
 /* ---------- actions ---------- */
 const ACTIONS = {
-  "page.back":      async (tab) => browser.tabs.goBack(tab.id).catch(() => {}),
-  "page.forward":   async (tab) => browser.tabs.goForward(tab.id).catch(() => {}),
+  "page.back":      async (tab) => navigateAndAdopt(tab, () => browser.tabs.goBack(tab.id)),
+  "page.forward":   async (tab) => navigateAndAdopt(tab, () => browser.tabs.goForward(tab.id)),
   "scroll.up":      async (tab, ctx) => contextualScroll(tab, ctx, "up"),
   "scroll.down":    async (tab, ctx) => contextualScroll(tab, ctx, "down"),
   "page.top":       async (tab) => scrollExtreme(tab, "top"),
   "page.bottom":    async (tab) => scrollExtreme(tab, "bottom"),
   "site.home":      async (tab, ctx) => {
-    if (ctx?.longPress) return browser.tabs.create({ url: "about:home" });
+    if (ctx?.longPress) {
+      let url = "about:home";
+      try {
+        const hp = await browser.browserSettings?.homepageOverride?.get?.({});
+        if (hp?.value) url = String(hp.value).split("|")[0].trim() || url;
+      } catch {}
+      try { return await browser.tabs.update(tab.id, { url }); }
+      catch { return browser.tabs.create({ url }); }
+    }
     return browser.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => { window.location.href = window.location.origin + "/"; }
@@ -157,24 +165,16 @@ const ACTIONS = {
     return browser.tabs.create({ url });
   },
   "help.toggle":    async (tab) => {
+    // Firefox MV3 : sidebarAction.open/toggle exige une activation utilisateur,
+    // perdue dans les handlers de messages. On essaie quand même, puis on
+    // bascule sur un panneau injecté côté page (même contenu, dans une iframe).
+    const sa = browser.sidebarAction;
     try {
-      const sa = browser.sidebarAction;
-      if (!sa) return browser.tabs.sendMessage(tab.id, { type: "ogc.toggleHelpPanel" }).catch(() => {});
-      // Appeler toggle() en tout premier : sur certains navigateurs,
-      // l'activation utilisateur est perdue après un await intermédiaire.
-      if (typeof sa.toggle === "function") return sa.toggle();
-      const win = await browser.windows.getCurrent().catch(() => null);
-      const details = win?.id ? { windowId: win.id } : {};
-      if (typeof sa.isOpen === "function") {
-        const open = await sa.isOpen(details);
-        return open ? sa.close() : sa.open();
-      }
-      return sa.open?.();
-    } catch (e) {
-      console.warn("[OGC] help.toggle failed", e);
-      try { await browser.sidebarAction.open(); }
-      catch { await browser.tabs.sendMessage(tab.id, { type: "ogc.toggleHelpPanel" }).catch(() => {}); }
-    }
+      if (sa && typeof sa.toggle === "function") { await sa.toggle(); return; }
+      if (sa && typeof sa.open === "function") { await sa.open(); return; }
+    } catch (e) { /* fallback injecté ci-dessous */ }
+    try { await browser.tabs.sendMessage(tab.id, { type: "ogc.toggleHelpPanel" }); }
+    catch (e) { console.warn("[OGC] help.toggle fallback failed", e); }
   },
   "tab.new":        async (tab, ctx) => {
     const opts = {};
