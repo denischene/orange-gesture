@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Orange Gesture Control",
   "short_name": "OGC",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "browser_specific_settings": {
@@ -73,7 +73,14 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["wasm/ogc_recognizer.wasm", "img/*.png"],
+      "resources": [
+        "wasm/ogc_recognizer.wasm",
+        "sidebar/sidebar.html",
+        "sidebar/sidebar.js",
+        "icons/ogc-32.png",
+        "img/*.png",
+        "img/*.gif"
+      ],
       "matches": ["<all_urls>"]
     }
   ]
