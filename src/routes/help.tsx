@@ -80,11 +80,10 @@ function Help() {
           <Link to="/memo" className="text-primary underline">
             mémo des gestes
           </Link>{" "}
-          répertorie toutes les commandes. Les{" "}
+          répertorie toutes les commandes.{" "}
           <Link to="/tutorials" className="text-primary underline">
-            tutoriels
-          </Link>{" "}
-          présentent les usages courants.
+            Suivez le processus d'installation.
+          </Link>
         </p>
       </Section>
     </div>
