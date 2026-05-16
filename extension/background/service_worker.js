@@ -2,65 +2,25 @@
  * Uses WASM recognizer with JS fallback, plus a fuzzy matcher so users
  * don't have to draw the exact canonical sequence.
  */
-import { recognizeStroke, preload } from "./wasm_loader.js";
+import { recognizeAction, preload } from "./wasm_loader.js";
+import GESTURES from "../data/gestures.json" with { type: "json" };
 
-// vocab + french labels for tooltip feedback
-const OGC_VOCABULARY = {
-  "L":            { action: "page.back",        label: "Page précédente",    repeat: true,  longLabel: "Page précédente (répété)" },
-  "R":            { action: "page.forward",     label: "Page suivante",      repeat: true,  longLabel: "Page suivante (répété)" },
-  "U":            { action: "scroll.up",        label: "Monter",             repeat: true,  longLabel: "Monter (répété)" },
-  "D":            { action: "scroll.down",      label: "Descendre",          repeat: true,  longLabel: "Descendre (répété)" },
-  "RU":           { action: "page.top",         label: "Haut de page" },
-  "RD":           { action: "page.bottom",      label: "Bas de page" },
-  "LURDR":        { action: "site.home",        label: "Accueil du site",    longLabel: "Accueil du navigateur" },
-  "URUURRDLDDL":  { action: "search.web",       label: "Rechercher sur internet", longLabel: "Rechercher dans la page" },
-  "UURRDDLDD":    { action: "help.toggle",      label: "Aide" },
-  "DUURRDRD":     { action: "tab.new",          label: "Nouvel onglet" },
-  "URRDRD":       { action: "tab.next",         label: "Onglet suivant",     repeat: true,  longLabel: "Onglet suivant (répété)" },
-  "DDLLULU":      { action: "tab.prev",         label: "Onglet précédent",   repeat: true,  longLabel: "Onglet précédent (répété)" },
-  "DRULDR":       { action: "tab.close",        label: "Fermer l'onglet",    repeat: true,  longLabel: "Fermer l'onglet (répété)" },
-  "UR":           { action: "window.maximize",  label: "Agrandir la fenêtre",longLabel: "État fenêtre suivant" },
-  "DL":           { action: "window.minimize",  label: "Réduire la fenêtre", longLabel: "État fenêtre précédent" },
-  "DRDDLLLUURUR": { action: "zoom.in",          label: "Zoomer",             repeat: true,  longLabel: "Zoom progressif" },
-  "LDLDDRRULUUL": { action: "zoom.out",         label: "Dézoomer",           repeat: true,  longLabel: "Dézoom progressif" },
-  "LRULRD":       { action: "bookmarks.add",    label: "Ajouter aux favoris" },
-  "DDRURUULL":    { action: "page.saveAs",      label: "Enregistrer sous…" }
-};
-
-// Accept user-drawn variations: alias many sequences to the canonical action.
-const ALIASES = {
-  // Onglet suivant — arc gauche -> droite
-  "URRDRD": "tab.next", "UURRDR": "tab.next", "UURRDRD": "tab.next",
-  "UURDRD": "tab.next", "UURRDRR": "tab.next",
-  // Onglet précédent — arc droite -> gauche
-  "DDLLULU": "tab.prev",
-  "UULLDLD": "tab.prev", "UULDLD": "tab.prev",
-  "UULLDL": "tab.prev",  "UULLDLL": "tab.prev",
-  // Bas de page — variantes
-  "RDRD": "page.bottom",
-  // Nouvel onglet : commence par D + variantes de l'arc suivant
-  "DUURRDR": "tab.new", "DUURRDRD": "tab.new",
-  "DUURDRD": "tab.new", "DUURRDRR": "tab.new",
-  // Fermer (alpha)
-  "DRULDR": "tab.close",
-  "DLULLUURRDR": "tab.close", "DLLULLUURDR": "tab.close",
-  "DLLULLUURRDR": "tab.close", "DDLLULLUURRDR": "tab.close",
-  // Ajouter aux favoris
-  "LRULRD": "bookmarks.add",
-  "RURRDR": "bookmarks.add", "RURDDR": "bookmarks.add",
-  "RURDLDR": "bookmarks.add", "RURDR": "bookmarks.add",
-  "RURDDRR": "bookmarks.add", "RURUDDRR": "bookmarks.add",
-  "URUDDRR": "bookmarks.add",
-  // Enregistrer sous
-  "DDRURUULL": "page.saveAs",
-  "DDRRURULLL": "page.saveAs", "DDRRURULL": "page.saveAs",
-  "DDRRURUUUL": "page.saveAs"
-};
-for (const [seq, action] of Object.entries(ALIASES)) {
-  if (!OGC_VOCABULARY[seq]) {
-    // copy label/longLabel/repeat from canonical entry for this action
-    const canonical = Object.values(OGC_VOCABULARY).find((v) => v.action === action);
-    if (canonical) OGC_VOCABULARY[seq] = { ...canonical };
+// Build the runtime vocabulary from the single JSON source of truth.
+// Every canonical sequence + every alias maps to the same entry so the
+// JS fallback (when WASM fails) and the fuzzy matcher share one table.
+const OGC_VOCABULARY = {};
+const ENTRY_BY_ACTION = {};
+for (const g of GESTURES.gestures) {
+  const entry = {
+    action: g.id,
+    label: g.label,
+    ...(g.longLabel ? { longLabel: g.longLabel } : {}),
+    ...(g.repeat ? { repeat: true } : {})
+  };
+  ENTRY_BY_ACTION[g.id] = entry;
+  OGC_VOCABULARY[g.canonical] = entry;
+  for (const a of g.aliases || []) {
+    if (!OGC_VOCABULARY[a]) OGC_VOCABULARY[a] = entry;
   }
 }
 
@@ -315,10 +275,16 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
 
   const ctx = msg.context ?? {};
   let sequence = "";
-  try { sequence = await recognizeStroke(msg.points); }
-  catch (err) { console.warn("[OGC] recognition failed", err); return; }
+  let nativeAction = null;
+  try {
+    const res = await recognizeAction(msg.points);
+    sequence     = res.sequence;
+    nativeAction = res.actionName;
+  } catch (err) { console.warn("[OGC] recognition failed", err); return; }
 
-  const entry = findVocab(sequence);
+  // Prefer the native exact match embedded in the WASM; fall back to the JS
+  // fuzzy matcher only when the C++ table has no exact hit.
+  const entry = (nativeAction && ENTRY_BY_ACTION[nativeAction]) || findVocab(sequence);
   if (!entry) return;
 
   // For repeats: only "repeat" tagged actions get re-fired.
