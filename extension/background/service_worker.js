@@ -160,17 +160,19 @@ const ACTIONS = {
     try {
       const sa = browser.sidebarAction;
       if (!sa) return;
-      // Préférer open/close explicites pour fiabiliser la bascule
-      // (toggle() exige un user-gesture parfois perdu via messaging).
+      // Appeler toggle() en tout premier : sur certains navigateurs,
+      // l'activation utilisateur est perdue après un await intermédiaire.
+      if (typeof sa.toggle === "function") return sa.toggle();
+      const win = await browser.windows.getCurrent().catch(() => null);
+      const details = win?.id ? { windowId: win.id } : {};
       if (typeof sa.isOpen === "function") {
-        const open = await sa.isOpen({});
-        if (open) return sa.close();
-        return sa.open();
+        const open = await sa.isOpen(details);
+        return open ? sa.close() : sa.open();
       }
-      return sa.toggle?.();
+      return sa.open?.();
     } catch (e) {
       console.warn("[OGC] help.toggle failed", e);
-      try { await browser.sidebarAction.toggle(); } catch {}
+      try { await browser.sidebarAction.open(); } catch {}
     }
   },
   "tab.new":        async (tab, ctx) => {
@@ -213,9 +215,13 @@ const ACTIONS = {
 async function cycleTab(tab, delta) {
   const tabs = await browser.tabs.query({ currentWindow: true });
   const sorted = tabs.sort((a, b) => a.index - b.index);
+  if (sorted.length < 2) return false;
   const i = sorted.findIndex((t) => t.id === tab.id);
+  if (i < 0) return false;
   const next = sorted[(i + delta + sorted.length) % sorted.length];
-  if (next) await browser.tabs.update(next.id, { active: true });
+  if (!next || next.id === tab.id) return false;
+  await browser.tabs.update(next.id, { active: true });
+  return true;
 }
 
 async function scrollExtreme(tab, where) {
