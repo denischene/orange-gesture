@@ -172,6 +172,7 @@ function GestureCard({ g }: { g: Gesture }) {
               aria-hidden
               className="absolute inset-0 h-28 w-28 object-contain opacity-0 group-hover:opacity-100 transition-opacity"
               loading="lazy"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = `/img/${g.name}.png`; }}
             />
           </>
         )}
