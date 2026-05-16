@@ -136,11 +136,14 @@ const wizardCancel = document.getElementById("ogc-wizard-cancel");
 
 let currentGesture = null;
 let traces = []; // sequences enregistrées
+let acceptedStrokes = []; // points des tracés acceptés (pour overlay final)
+let fadeTimer = null;
 let inconsistencyStreak = 0;
 const MAX_INCONSISTENCIES = 3;
 let drawing = false;
 let recognizer = null;
 let lastPoint = null;
+let currentStrokePoints = [];
 const ctx = wizardCanvas.getContext("2d");
 
 /* Distance de Levenshtein pour tolérer de petites variations. */
@@ -181,9 +184,34 @@ function clearCanvas() {
   ctx.lineJoin = "round";
 }
 
+function drawStroke(points, opts = {}) {
+  if (!points || points.length < 2) return;
+  ctx.save();
+  ctx.strokeStyle = opts.color || "#ff7900";
+  ctx.globalAlpha = opts.alpha != null ? opts.alpha : 1;
+  ctx.lineWidth = opts.width || 3;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function scheduleFade() {
+  if (fadeTimer) clearTimeout(fadeTimer);
+  fadeTimer = setTimeout(() => { clearCanvas(); fadeTimer = null; }, 3000);
+}
+function cancelFade() {
+  if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null; }
+}
+
 function openWizard(gesture) {
   currentGesture = gesture;
   traces = [];
+  acceptedStrokes = [];
+  cancelFade();
   inconsistencyStreak = 0;
   wizardTitle.textContent = `Personnaliser : ${gesture.label}`;
   wizardSub.textContent = `Tracez votre geste ${REQUIRED_TRACES} fois. Les tracés doivent être cohérents.`;
@@ -199,6 +227,8 @@ function closeWizard() {
   wizard.hidden = true;
   currentGesture = null;
   traces = [];
+  acceptedStrokes = [];
+  cancelFade();
   drawing = false;
 }
 
@@ -218,12 +248,15 @@ wizardCanvas.addEventListener("contextmenu", (e) => e.preventDefault());
 wizardCanvas.addEventListener("pointerdown", (e) => {
   if (!currentGesture) return;
   e.preventDefault();
+  cancelFade();
   drawing = true;
   recognizer = new OGC_Recognizer();
   clearCanvas();
+  currentStrokePoints = [];
   const [x, y] = pointerPos(e);
   recognizer.addPoint(x, y);
   lastPoint = [x, y];
+  currentStrokePoints.push([x, y]);
   ctx.beginPath();
   ctx.moveTo(x, y);
   wizardCanvas.setPointerCapture(e.pointerId);
@@ -232,6 +265,7 @@ wizardCanvas.addEventListener("pointermove", (e) => {
   if (!drawing) return;
   const [x, y] = pointerPos(e);
   recognizer.addPoint(x, y);
+  currentStrokePoints.push([x, y]);
   ctx.lineTo(x, y);
   ctx.stroke();
 });
@@ -239,17 +273,21 @@ function finishStroke() {
   if (!drawing) return;
   drawing = false;
   const seq = recognizer.sequence();
+  const strokePoints = currentStrokePoints.slice();
   if (!seq || seq.length < 1) {
     setMsg("Tracé trop court, recommencez.", "error");
+    scheduleFade();
     return;
   }
   // 1er tracé : on l'accepte tel quel.
   if (traces.length === 0) {
     traces.push(seq);
+    acceptedStrokes.push(strokePoints);
     inconsistencyStreak = 0;
     wizardSeq.textContent = seq;
     wizardStep.textContent = "2";
     setMsg(`Tracé 1/${REQUIRED_TRACES} accepté. Reproduisez le même geste.`);
+    scheduleFade();
     return;
   }
   const reference = traces[0];
@@ -257,6 +295,7 @@ function finishStroke() {
     inconsistencyStreak++;
     if (inconsistencyStreak >= MAX_INCONSISTENCIES) {
       traces = [];
+      acceptedStrokes = [];
       inconsistencyStreak = 0;
       wizardStep.textContent = "1";
       wizardSeq.textContent = customGestures[currentGesture.id] || currentGesture.canonical;
@@ -265,18 +304,28 @@ function finishStroke() {
     } else {
       setMsg(`Tracé incohérent (« ${seq} » ≠ « ${reference} »). Essai ${inconsistencyStreak}/3 — réessayez ce tracé.`, "error");
     }
+    scheduleFade();
     return;
   }
   inconsistencyStreak = 0;
   traces.push(seq);
+  acceptedStrokes.push(strokePoints);
   wizardSeq.textContent = reference;
   if (traces.length >= REQUIRED_TRACES) {
     wizardStep.textContent = String(REQUIRED_TRACES);
     setMsg(`Geste cohérent (${reference}). Vous pouvez sauvegarder.`, "success");
     wizardSave.disabled = false;
+    // Le 5e tracé reste affiché ; on superpose les 4 autres par dessus.
+    cancelFade();
+    clearCanvas();
+    drawStroke(acceptedStrokes[REQUIRED_TRACES - 1], { color: "#ff7900", width: 4, alpha: 1 });
+    for (let i = 0; i < REQUIRED_TRACES - 1; i++) {
+      drawStroke(acceptedStrokes[i], { color: "#1e3a8a", width: 2, alpha: 0.55 });
+    }
   } else {
     wizardStep.textContent = String(traces.length + 1);
     setMsg(`Tracé ${traces.length}/${REQUIRED_TRACES} accepté. Recommencez le même geste.`);
+    scheduleFade();
   }
 }
 wizardCanvas.addEventListener("pointerup", finishStroke);
@@ -286,6 +335,8 @@ wizardCanvas.addEventListener("pointerleave", () => { if (drawing) finishStroke(
 wizardReset.addEventListener("click", () => {
   if (!currentGesture) return;
   traces = [];
+  acceptedStrokes = [];
+  cancelFade();
   inconsistencyStreak = 0;
   wizardStep.textContent = "1";
   wizardSeq.textContent = customGestures[currentGesture.id] || currentGesture.canonical;
