@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { DownloadButton } from "@/components/download-button";
 
 export const Route = createFileRoute("/tutorials")({
   component: Tutorials,
@@ -20,11 +21,11 @@ const STEPS = [
     title: "Téléchargez l'extension",
     body: (
       <>
-        Récupérez le fichier{" "}
-        <a href="/ogc.xpi" download className="text-primary underline">
-          ogc.xpi
-        </a>{" "}
-        (extension Firefox MV3, ~19 Ko).
+        Téléchargez l'extension pour votre navigateur (Firefox, Chrome, Edge,
+        Opera, Brave) :
+        <span className="mt-2 inline-block">
+          <DownloadButton />
+        </span>
       </>
     ),
   },
@@ -59,7 +60,7 @@ const STEPS = [
         <Link to="/memo" className="text-primary underline">
           mémo des gestes
         </Link>{" "}
-        pour découvrir les 21 commandes disponibles.
+        pour découvrir les 19 gestes disponibles et leurs 35 commandes.
       </>
     ),
   },
@@ -93,10 +94,6 @@ function Tutorials() {
           </li>
         ))}
       </ol>
-      <p className="mt-10 text-xs text-muted-foreground">
-        Note&nbsp;: l'ancienne version du site embarquait un tutoriel Flash
-        (<code>.swf</code>), désormais retiré au profit de cette page HTML.
-      </p>
     </div>
   );
 }

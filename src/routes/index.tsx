@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { DownloadButton } from "@/components/download-button";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -28,7 +29,7 @@ const FEATURES = [
     body: "Compatible Firefox 115+. Storage WebExtension, content scripts isolés, plus de XPCOM ni d'overlay XUL.",
   },
   {
-    title: "21 gestes prêts à l'emploi",
+    title: "19 gestes prêts à l'emploi",
     body: "Onglets, historique, favoris, zoom, navigation… Le mémo détaillé est disponible dans le menu.",
   },
 ];
@@ -45,9 +46,6 @@ function Index() {
         <div className="mx-auto max-w-6xl px-4 py-20 md:py-28">
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div>
-              <p className="inline-block rounded-full bg-accent text-accent-foreground text-xs px-3 py-1 mb-4">
-                Extension Firefox · v2.0.0 · MV3
-              </p>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
                 Pilotez votre navigateur{" "}
                 <span className="text-primary">d'un simple geste</span>.
@@ -59,23 +57,12 @@ function Index() {
                 l'action se déclenche.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a
-                  href="/ogc.xpi"
-                  download
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-md font-medium shadow-lg transition hover:opacity-90"
-                  style={{
-                    background: "var(--primary)",
-                    color: "#000",
-                    boxShadow: "var(--shadow-elegant)",
-                  }}
-                >
-                  Télécharger ogc.xpi
-                </a>
+                <DownloadButton variant="hero" />
                 <Link
                   to="/memo"
                   className="inline-flex items-center px-5 py-3 rounded-md border border-border bg-card hover:bg-accent transition"
                 >
-                  Voir les 21 gestes
+                  Voir les 19 gestes
                 </Link>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">

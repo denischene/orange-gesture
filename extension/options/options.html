@@ -8,15 +8,20 @@
   <body>
     <header class="ogc-hero">
       <div class="ogc-hero-inner">
-        <div class="ogc-brand">
+        <div class="ogc-brand-row">
           <img src="../img/logo.png" alt="" class="ogc-logo" />
-          <span>Orange Gesture Control</span>
+          <div class="ogc-brand-text">
+            <div class="ogc-brand-title">
+              <span class="ogc-brand-black">Orange Gesture</span>
+              <span class="ogc-brand-orange">Control</span>
+            </div>
+            <p class="ogc-brand-sub">Préférences</p>
+          </div>
         </div>
-        <h1>Préférences</h1>
-        <p class="ogc-lead">
-          Personnalisez le bouton de tracé, l'affichage du geste, la
-          répétition automatique et vos propres tracés.
-        </p>
+        <nav class="ogc-tabs" role="tablist">
+          <button type="button" class="ogc-tab is-active" role="tab" aria-selected="true" data-tab="settings">Réglages généraux</button>
+          <button type="button" class="ogc-tab" role="tab" aria-selected="false" data-tab="custom">Gestes personnalisés</button>
+        </nav>
       </div>
     </header>
 
@@ -26,7 +31,7 @@
         une nouvelle page web pour le faire.
       </div>
 
-      <section class="ogc-card">
+      <section class="ogc-card ogc-tab-panel" data-panel="settings">
         <h2>Réglages généraux</h2>
 
         <form id="ogc-options" class="ogc-form">
@@ -64,7 +69,7 @@
         </form>
       </section>
 
-      <section class="ogc-card">
+      <section class="ogc-card ogc-tab-panel" data-panel="custom" hidden>
         <h2>Gestes personnalisés</h2>
         <p class="ogc-lead-sm">
           Sélectionnez une commande puis tracez votre propre geste cinq fois.

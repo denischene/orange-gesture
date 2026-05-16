@@ -1,4 +1,5 @@
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { Link, Outlet } from "@tanstack/react-router";
+import { DownloadButton } from "@/components/download-button";
 
 const NAV = [
   { to: "/", label: "Accueil" },
@@ -8,7 +9,6 @@ const NAV = [
 ] as const;
 
 export function SiteLayout() {
-  const { pathname } = useLocation();
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="border-b border-border bg-card/80 backdrop-blur sticky top-0 z-40">
@@ -36,14 +36,7 @@ export function SiteLayout() {
                 </Link>
               );
             })}
-            <a
-              href="/ogc.xpi"
-              download
-              className="ml-2 px-3 py-1.5 rounded-md font-medium text-sm shadow-sm hover:opacity-90 transition"
-              style={{ background: "var(--primary)", color: "#000" }}
-            >
-              Télécharger l'extension
-            </a>
+            <DownloadButton variant="nav" />
           </nav>
         </div>
       </header>
@@ -53,7 +46,6 @@ export function SiteLayout() {
       <footer className="border-t border-border bg-card/60">
         <div className="mx-auto max-w-6xl px-4 py-6 text-xs text-muted-foreground flex flex-wrap justify-between gap-2">
           <span>© Orange Gesture Control — site rénové à partir du projet historique d'Orange Labs.</span>
-          <span>Extension Firefox MV3 v2.0.0</span>
         </div>
       </footer>
     </div>

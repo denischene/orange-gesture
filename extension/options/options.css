@@ -15,23 +15,48 @@ html, body { margin: 0; padding: 0; background: var(--ogc-bg); color: var(--ogc-
 body { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 
 .ogc-hero {
-  background: linear-gradient(135deg, #ff7900 0%, #ff9a3c 100%);
-  color: #000;
-  padding: 48px 24px 56px;
+  background: #ffffff;
+  color: var(--ogc-ink);
+  padding: 36px 24px 0;
+  border-bottom: 1px solid var(--ogc-border);
 }
 .ogc-hero-inner { max-width: 880px; margin: 0 auto; }
-.ogc-brand {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-weight: 600; opacity: .95; margin-bottom: 16px;
-  font-size: 14px; letter-spacing: .04em; text-transform: uppercase;
+.ogc-brand-row {
+  display: flex; align-items: center; gap: 18px; margin-bottom: 22px;
 }
-.ogc-dot { width: 10px; height: 10px; border-radius: 999px; background: #000; box-shadow: 0 0 0 4px rgba(0,0,0,.2); }
-.ogc-logo { width: 28px; height: 28px; object-fit: contain; display: inline-block; }
-.ogc-hero h1 { font-size: 34px; line-height: 1.15; margin: 0 0 12px; font-weight: 700; }
+.ogc-logo {
+  width: 72px; height: 72px; object-fit: contain; display: inline-block;
+}
+.ogc-brand-text { display: flex; flex-direction: column; gap: 2px; }
+.ogc-brand-title {
+  display: flex; align-items: baseline; gap: 10px;
+  font-size: 38px; font-weight: 700; line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.ogc-brand-black { color: #000; }
+.ogc-brand-orange { color: var(--ogc-orange); }
+.ogc-brand-sub {
+  font-size: 18px; color: var(--ogc-muted); margin: 0;
+  font-weight: 500;
+}
+.ogc-tabs {
+  display: flex; gap: 28px; margin: 0; padding: 0;
+}
+.ogc-tab {
+  background: transparent; border: 0; padding: 12px 2px;
+  font: inherit; font-size: 15px; font-weight: 600; color: #000;
+  cursor: pointer; border-bottom: 4px solid transparent;
+  margin-bottom: -1px;
+}
+.ogc-tab:hover { color: var(--ogc-orange); }
+.ogc-tab.is-active {
+  border-bottom-color: var(--ogc-orange);
+  color: #000;
+}
 .ogc-lead { font-size: 16px; max-width: 56ch; margin: 0; opacity: .95; }
 .ogc-lead-sm { color: var(--ogc-muted); margin: 4px 0 18px; }
 
-.ogc-main { max-width: 880px; margin: -32px auto 64px; padding: 0 24px; display: grid; gap: 20px; }
+.ogc-main { max-width: 880px; margin: 28px auto 64px; padding: 0 24px; display: grid; gap: 20px; }
 .ogc-card {
   background: var(--ogc-card);
   border: 1px solid var(--ogc-border);
