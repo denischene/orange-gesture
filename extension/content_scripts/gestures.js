@@ -110,6 +110,7 @@
       browser.runtime.sendMessage({
         type: "ogc.stroke",
         points: points.slice(),
+        actionHint: window.OGC_VOCABULARY?.[seq] || null,
         context: { ...buildContext(), longPress: true }
       });
     }, LONG_PRESS_MS);
@@ -161,6 +162,7 @@
       browser.runtime.sendMessage({
         type: "ogc.stroke",
         points: points.slice(),
+        actionHint: window.OGC_VOCABULARY?.[previewSeq] || null,
         context: { ...buildContext(), longPress: false }
       });
     }
