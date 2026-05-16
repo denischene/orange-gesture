@@ -91,7 +91,20 @@ function Help() {
           répertorie toutes les commandes.{" "}
           <Link to="/tutorials" className="text-primary underline">
             Suivez le processus d'installation.
-          </Link>
+          </Link>{" "}
+          <a
+            href="about:addons"
+            className="text-primary underline"
+            onClick={(e) => {
+              e.preventDefault();
+              alert(
+                "Ouvrez about:addons, puis sélectionnez Orange Gesture Control → Préférences.",
+              );
+            }}
+          >
+            Personnalisez vos gestes
+          </a>
+          .
         </p>
       </Section>
     </div>

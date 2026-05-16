@@ -35,8 +35,9 @@ async function loadSettings() {
   }
 }
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+form.addEventListener("submit", (e) => e.preventDefault());
+
+async function persistSettings() {
   const { settings = {} } = await browser.storage.local.get("settings");
   const next = {
     ...DEFAULTS,
@@ -47,7 +48,10 @@ form.addEventListener("submit", async (e) => {
   };
   await browser.storage.local.set({ settings: next });
   saveStatus.textContent = "Préférences enregistrées.";
-  setTimeout(() => { saveStatus.textContent = ""; }, 2500);
+  setTimeout(() => { saveStatus.textContent = ""; }, 2000);
+}
+form.addEventListener("change", (e) => {
+  if (e.target && e.target.matches('input[type="radio"]')) persistSettings();
 });
 
 /* ---------- liste des gestes ---------- */
@@ -107,10 +111,37 @@ const wizardCancel = document.getElementById("ogc-wizard-cancel");
 
 let currentGesture = null;
 let traces = []; // sequences enregistrées
+let inconsistencyStreak = 0;
+const MAX_INCONSISTENCIES = 3;
 let drawing = false;
 let recognizer = null;
 let lastPoint = null;
 const ctx = wizardCanvas.getContext("2d");
+
+/* Distance de Levenshtein pour tolérer de petites variations. */
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  const dp = new Array(n + 1);
+  for (let j = 0; j <= n; j++) dp[j] = j;
+  for (let i = 1; i <= m; i++) {
+    let prev = dp[0]; dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const tmp = dp[j];
+      dp[j] = a[i - 1] === b[j - 1]
+        ? prev
+        : 1 + Math.min(prev, dp[j], dp[j - 1]);
+      prev = tmp;
+    }
+  }
+  return dp[n];
+}
+function isCloseEnough(a, b) {
+  if (a === b) return true;
+  const tol = Math.max(1, Math.floor(Math.max(a.length, b.length) / 3));
+  return levenshtein(a, b) <= tol;
+}
 
 function setMsg(text, kind = "") {
   wizardMsg.textContent = text;
@@ -128,14 +159,15 @@ function clearCanvas() {
 function openWizard(gesture) {
   currentGesture = gesture;
   traces = [];
+  inconsistencyStreak = 0;
   wizardTitle.textContent = `Personnaliser : ${gesture.label}`;
   wizardSub.textContent = `Tracez votre geste ${REQUIRED_TRACES} fois. Les tracés doivent être cohérents.`;
   wizardStep.textContent = "1";
   wizardSeq.textContent = customGestures[gesture.id] || gesture.canonical;
   wizardSave.disabled = true;
   setMsg("");
-  clearCanvas();
   wizard.hidden = false;
+  requestAnimationFrame(() => { resizeCanvas(); });
 }
 
 function closeWizard() {
@@ -157,8 +189,10 @@ function pointerPos(e) {
   return [e.clientX - r.left, e.clientY - r.top];
 }
 
+wizardCanvas.addEventListener("contextmenu", (e) => e.preventDefault());
 wizardCanvas.addEventListener("pointerdown", (e) => {
   if (!currentGesture) return;
+  e.preventDefault();
   drawing = true;
   recognizer = new OGC_Recognizer();
   clearCanvas();
@@ -176,7 +210,7 @@ wizardCanvas.addEventListener("pointermove", (e) => {
   ctx.lineTo(x, y);
   ctx.stroke();
 });
-wizardCanvas.addEventListener("pointerup", () => {
+function finishStroke() {
   if (!drawing) return;
   drawing = false;
   const seq = recognizer.sequence();
@@ -184,17 +218,32 @@ wizardCanvas.addEventListener("pointerup", () => {
     setMsg("Tracé trop court, recommencez.", "error");
     return;
   }
-  traces.push(seq);
-  // test de cohérence : tous les tracés doivent être identiques.
-  const reference = traces[0];
-  const consistent = traces.every((t) => t === reference);
-  if (!consistent) {
-    setMsg(`Tracé incohérent (« ${seq} » ≠ « ${reference} »). Veuillez recommencer.`, "error");
-    traces = [];
-    wizardStep.textContent = "1";
-    wizardSeq.textContent = customGestures[currentGesture.id] || currentGesture.canonical;
+  // 1er tracé : on l'accepte tel quel.
+  if (traces.length === 0) {
+    traces.push(seq);
+    inconsistencyStreak = 0;
+    wizardSeq.textContent = seq;
+    wizardStep.textContent = "2";
+    setMsg(`Tracé 1/${REQUIRED_TRACES} accepté. Reproduisez le même geste.`);
     return;
   }
+  const reference = traces[0];
+  if (!isCloseEnough(seq, reference)) {
+    inconsistencyStreak++;
+    if (inconsistencyStreak >= MAX_INCONSISTENCIES) {
+      traces = [];
+      inconsistencyStreak = 0;
+      wizardStep.textContent = "1";
+      wizardSeq.textContent = customGestures[currentGesture.id] || currentGesture.canonical;
+      wizardSave.disabled = true;
+      setMsg(`Trop d'incohérences (3). Procédure réinitialisée — recommencez depuis le début.`, "error");
+    } else {
+      setMsg(`Tracé incohérent (« ${seq} » ≠ « ${reference} »). Essai ${inconsistencyStreak}/3 — réessayez ce tracé.`, "error");
+    }
+    return;
+  }
+  inconsistencyStreak = 0;
+  traces.push(seq);
   wizardSeq.textContent = reference;
   if (traces.length >= REQUIRED_TRACES) {
     wizardStep.textContent = String(REQUIRED_TRACES);
@@ -204,11 +253,15 @@ wizardCanvas.addEventListener("pointerup", () => {
     wizardStep.textContent = String(traces.length + 1);
     setMsg(`Tracé ${traces.length}/${REQUIRED_TRACES} accepté. Recommencez le même geste.`);
   }
-});
+}
+wizardCanvas.addEventListener("pointerup", finishStroke);
+wizardCanvas.addEventListener("pointercancel", finishStroke);
+wizardCanvas.addEventListener("pointerleave", () => { if (drawing) finishStroke(); });
 
 wizardReset.addEventListener("click", () => {
   if (!currentGesture) return;
   traces = [];
+  inconsistencyStreak = 0;
   wizardStep.textContent = "1";
   wizardSeq.textContent = customGestures[currentGesture.id] || currentGesture.canonical;
   wizardSave.disabled = true;
