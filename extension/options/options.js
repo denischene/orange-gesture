@@ -348,7 +348,7 @@ wizardSave.addEventListener("click", async () => {
   if (!currentGesture || traces.length < REQUIRED_TRACES) return;
   const seq = traces[0];
   customGestures[currentGesture.id] = seq;
-  await browser.storage.local.set({ customGestures });
+  await OGCStore.setCustom(customGestures);
   renderCustomList();
   closeWizard();
 });
