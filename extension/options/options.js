@@ -358,6 +358,24 @@ wizardClose.addEventListener("click", closeWizard);
 wizardCancel.addEventListener("click", closeWizard);
 
 /* ---------- init ---------- */
+
+/* Tabs */
+const tabButtons = document.querySelectorAll(".ogc-tab");
+const tabPanels = document.querySelectorAll(".ogc-tab-panel");
+tabButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const target = btn.getAttribute("data-tab");
+    tabButtons.forEach((b) => {
+      const active = b === btn;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    tabPanels.forEach((p) => {
+      p.hidden = p.getAttribute("data-panel") !== target;
+    });
+  });
+});
+
 (async () => {
   await Promise.all([loadSettings(), loadGestures(), loadCustomGestures()]);
   renderCustomList();
