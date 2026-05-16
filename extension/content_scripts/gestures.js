@@ -31,6 +31,8 @@
       return Promise.resolve({ active: longPressActive });
     }
     if (msg?.type === "ogc.adoptLongPress") {
+      active = true;
+      longPressFired = true;
       longPressActive = true;
       return Promise.resolve({ active: true });
     }
