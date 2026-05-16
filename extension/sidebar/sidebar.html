@@ -42,70 +42,11 @@
       <img src="../icons/ogc-32.png" alt="" />
       <h1>OGC — Aide gestes</h1>
     </header>
-    <p class="hint">Cliquez un geste pour voir l'animation.</p>
+    <p class="hint">Cliquez un geste pour voir l'animation. Un appui long en fin de geste déclenche une action prolongée ou contextuelle.</p>
     <div id="preview">
       <div class="placeholder">Sélectionnez un geste ci-dessous.</div>
     </div>
     <div id="grid"></div>
-    <script>
-      // Ordre et libellés imposés par la spec.
-      const ITEMS = [
-        { img: "left_right_heart",       lbl: "+favoris" },
-        { img: "bottom_left_top_right",  lbl: "agrandir" },
-        { img: "interogation",           lbl: "aide" },
-        { img: "left_right_bottom",      lbl: "bas page" },
-        { img: "top_bottom",             lbl: "descendre" },
-        { img: "anticlockwise_circle",   lbl: "dézoomer" },
-        { img: "vertical_ribbon",        lbl: "enregistrer" },
-        { img: "alpha",                  lbl: "fermer" },
-        { img: "left_right_top",         lbl: "haut page" },
-        { img: "bottom_top",             lbl: "monter" },
-        { img: "top_down_arch",          lbl: "nouv. onglet" },
-        { img: "right_left_arch",        lbl: "onglet prcdt." },
-        { img: "left_right_arch",        lbl: "onglet suiv." },
-        { img: "undo",                   lbl: "accueil" },
-        { img: "right_left",             lbl: "page prcdte" },
-        { img: "left_right",             lbl: "page suiv." },
-        { img: "magnifying_glass",       lbl: "rechercher" },
-        { img: "top_right_bottom_left",  lbl: "réduire" },
-        { img: "clockwise_circle",       lbl: "zoomer" }
-      ];
-      const grid = document.getElementById("grid");
-      const preview = document.getElementById("preview");
-      let activeCell = null;
-      function showPreview(name, lbl) {
-        preview.innerHTML = "";
-        const img = document.createElement("img");
-        // Cache-bust pour forcer un nouveau cycle d'animation à chaque clic.
-        img.src = "../img/" + name + ".gif?t=" + Date.now();
-        img.alt = lbl;
-        img.onerror = () => { img.src = "../img/" + name + ".png"; };
-        const label = document.createElement("div");
-        label.className = "label";
-        label.textContent = lbl;
-        preview.appendChild(img);
-        preview.appendChild(label);
-      }
-      for (const it of ITEMS) {
-        const c = document.createElement("div");
-        c.className = "cell";
-        const img = document.createElement("img");
-        img.src = "../img/" + it.img + ".png";
-        img.alt = "";
-        img.onerror = () => { img.style.display = "none"; };
-        const l = document.createElement("div");
-        l.className = "lbl";
-        l.textContent = it.lbl;
-        c.appendChild(img);
-        c.appendChild(l);
-        c.addEventListener("click", () => {
-          if (activeCell) activeCell.classList.remove("active");
-          c.classList.add("active");
-          activeCell = c;
-          showPreview(it.img, it.lbl);
-        });
-        grid.appendChild(c);
-      }
-    </script>
+    <script src="sidebar.js"></script>
   </body>
 </html>

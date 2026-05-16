@@ -160,7 +160,23 @@ const ACTIONS = {
       : "https://www.google.com/";
     return browser.tabs.create({ url });
   },
-  "help.toggle":    async () => browser.sidebarAction?.toggle?.(),
+  "help.toggle":    async () => {
+    try {
+      const sa = browser.sidebarAction;
+      if (!sa) return;
+      // Préférer open/close explicites pour fiabiliser la bascule
+      // (toggle() exige un user-gesture parfois perdu via messaging).
+      if (typeof sa.isOpen === "function") {
+        const open = await sa.isOpen({});
+        if (open) return sa.close();
+        return sa.open();
+      }
+      return sa.toggle?.();
+    } catch (e) {
+      console.warn("[OGC] help.toggle failed", e);
+      try { await browser.sidebarAction.toggle(); } catch {}
+    }
+  },
   "tab.new":        async (tab, ctx) => {
     const opts = {};
     if (ctx?.linkHref) opts.url = ctx.linkHref;
