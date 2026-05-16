@@ -26,6 +26,7 @@ body { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 14px; letter-spacing: .04em; text-transform: uppercase;
 }
 .ogc-dot { width: 10px; height: 10px; border-radius: 999px; background: #000; box-shadow: 0 0 0 4px rgba(0,0,0,.2); }
+.ogc-logo { width: 28px; height: 28px; object-fit: contain; display: inline-block; }
 .ogc-hero h1 { font-size: 34px; line-height: 1.15; margin: 0 0 12px; font-weight: 700; }
 .ogc-lead { font-size: 16px; max-width: 56ch; margin: 0; opacity: .95; }
 .ogc-lead-sm { color: var(--ogc-muted); margin: 4px 0 18px; }
@@ -80,9 +81,13 @@ body { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 /* custom gestures list */
 .ogc-custom-list { display: grid; gap: 8px; }
 .ogc-gesture-row {
-  display: grid; grid-template-columns: 1fr auto auto auto; gap: 12px;
+  display: grid; grid-template-columns: 48px 1fr auto auto auto; gap: 12px;
   align-items: center; padding: 12px 14px;
   border: 1px solid var(--ogc-border); border-radius: 10px; background: #fff;
+}
+.ogc-gesture-img {
+  width: 48px; height: 48px; object-fit: contain;
+  background: #f8fafc; border-radius: 8px; padding: 4px;
 }
 .ogc-gesture-row:hover { border-color: #cbd5e1; }
 .ogc-gesture-label { font-weight: 500; }
