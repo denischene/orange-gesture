@@ -77,6 +77,21 @@
           la sauvegarde.
         </p>
         <div id="ogc-custom-list" class="ogc-custom-list"></div>
+        <div class="ogc-custom-tools">
+          <p class="ogc-hint">
+            Sauvegarde automatique : vos gestes personnalisés sont synchronisés
+            avec votre profil de navigateur (Firefox&nbsp;Sync, profil
+            Chrome/Edge, compte Opera) et restaurés lors d'une réinstallation
+            sur ce même profil. Vous pouvez aussi exporter / importer un
+            fichier pour les transférer manuellement.
+          </p>
+          <div class="ogc-actions">
+            <button type="button" id="ogc-export" class="ogc-btn ogc-btn-ghost">Exporter…</button>
+            <button type="button" id="ogc-import" class="ogc-btn ogc-btn-ghost">Importer…</button>
+            <input type="file" id="ogc-import-file" accept="application/json,.json" hidden />
+            <span id="ogc-io-status" class="ogc-status" aria-live="polite"></span>
+          </div>
+        </div>
       </section>
     </main>
 
@@ -110,6 +125,7 @@
     </div>
 
     <script src="../lib/recognizer.js"></script>
+    <script src="../lib/storage.js"></script>
     <script src="options.js"></script>
   </body>
 </html>

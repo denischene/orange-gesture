@@ -177,3 +177,5 @@ body { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   padding: 14px 22px 20px; border-top: 1px solid var(--ogc-border);
 }
 .ogc-spacer { flex: 1; }
+.ogc-custom-tools { margin-top: 18px; padding-top: 14px; border-top: 1px solid #e5e7eb; }
+.ogc-custom-tools .ogc-actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
