@@ -10,6 +10,9 @@
   let lastMoveAt = 0;
   let longPressTimer = null;
   let longPressFired = false;
+  // Visible to the background: true tant que l'utilisateur maintient le
+  // pointeur appuyé après le déclenchement initial du long-press.
+  let longPressActive = false;
   // Premier hyperlien rencontré pendant le geste (au démarrage ou en cours).
   let firstLinkHref = null;
   let settings = { enabled: true, button: 2, trails: true, tooltips: true };
@@ -19,6 +22,14 @@
   });
   browser.storage.onChanged.addListener((changes) => {
     if (changes.settings) settings = { ...settings, ...changes.settings.newValue };
+  });
+
+  // Le background interroge périodiquement l'onglet actif pour savoir si
+  // l'appui long est toujours en cours avant de répéter l'action.
+  browser.runtime.onMessage.addListener((msg) => {
+    if (msg?.type === "ogc.pingLongPress") {
+      return Promise.resolve({ active: longPressActive });
+    }
   });
 
   function buildContext() {
@@ -59,6 +70,7 @@
       const seq = recognizer.sequence();
       if (seq.length === 0) return;
       longPressFired = true;
+      longPressActive = true;
       if (settings.tooltips) window.OGC_Tooltips?.show("⏷ " + seq);
       browser.runtime.sendMessage({
         type: "ogc.stroke",
@@ -73,6 +85,7 @@
     active = true;
     suppressContext = false;
     longPressFired = false;
+    longPressActive = false;
     downTarget = e.target;
     firstLinkHref = null;
     recognizer.reset();
@@ -102,6 +115,7 @@
     if (!active) return;
     active = false;
     clearTimers();
+    longPressActive = false;
     const previewSeq = recognizer.sequence();
     if (settings.trails) window.OGC_Trails?.end();
     setTimeout(() => window.OGC_Tooltips?.hide(), 1500);
@@ -128,5 +142,14 @@
   window.addEventListener("pointerdown", onDown, true);
   window.addEventListener("pointermove", onMove, true);
   window.addEventListener("pointerup", onUp, true);
+  window.addEventListener("pointercancel", () => {
+    if (!active) { longPressActive = false; return; }
+    active = false; longPressActive = false; clearTimers();
+    browser.runtime.sendMessage({ type: "ogc.repeatStop" }).catch(() => {});
+  }, true);
+  window.addEventListener("blur", () => {
+    longPressActive = false;
+    browser.runtime.sendMessage({ type: "ogc.repeatStop" }).catch(() => {});
+  });
   window.addEventListener("contextmenu", onContext, true);
 })();
