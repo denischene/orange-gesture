@@ -2,6 +2,7 @@
  * Uses WASM recognizer with JS fallback, plus a fuzzy matcher so users
  * don't have to draw the exact canonical sequence.
  */
+import "../lib/compat.js";
 import { recognizeAction, preload } from "./wasm_loader.js";
 import GESTURES from "../data/gestures.data.js";
 
@@ -190,12 +191,17 @@ const ACTIONS = {
   },
   "help.toggle":    async (tab) => {
     // Firefox MV3 : sidebarAction.open/toggle exige une activation utilisateur,
-    // perdue dans les handlers de messages. On essaie quand même, puis on
-    // bascule sur un panneau injecté côté page (même contenu, dans une iframe).
+    // perdue dans les handlers de messages. Chromium n'expose pas
+    // sidebarAction du tout — on tente sidePanel.open(), puis on bascule sur
+    // un panneau injecté côté page (même contenu, dans une iframe).
     const sa = browser.sidebarAction;
     try {
       if (sa && typeof sa.toggle === "function") { await sa.toggle(); return; }
       if (sa && typeof sa.open === "function") { await sa.open(); return; }
+    } catch (e) { /* fallback injecté ci-dessous */ }
+    try {
+      const sp = globalThis.chrome?.sidePanel || browser.sidePanel;
+      if (sp?.open) { await sp.open({ windowId: tab.windowId, tabId: tab.id }); return; }
     } catch (e) { /* fallback injecté ci-dessous */ }
     try { await browser.tabs.sendMessage(tab.id, { type: "ogc.toggleHelpPanel" }); }
     catch (e) { console.warn("[OGC] help.toggle fallback failed", e); }
