@@ -9,7 +9,8 @@ const DEFAULTS = {
   trails: true,
   tooltips: true,
   sensitivity: 24,
-  repeatEnabled: true
+  repeatEnabled: true,
+  voice: false
 };
 
 const form = document.getElementById("ogc-options");
@@ -56,6 +57,9 @@ async function loadSettings() {
   for (const el of form.querySelectorAll('input[name="repeatEnabled"]')) {
     el.checked = (el.value === "on") === !!s.repeatEnabled;
   }
+  for (const el of form.querySelectorAll('input[name="voice"]')) {
+    el.checked = (el.value === "on") === !!s.voice;
+  }
 }
 
 form.addEventListener("submit", (e) => e.preventDefault());
@@ -67,7 +71,8 @@ async function persistSettings() {
     ...settings,
     button: Number(new FormData(form).get("button")),
     trails: new FormData(form).get("trails") === "on",
-    repeatEnabled: new FormData(form).get("repeatEnabled") === "on"
+    repeatEnabled: new FormData(form).get("repeatEnabled") === "on",
+    voice: new FormData(form).get("voice") === "on"
   };
   await browser.storage.local.set({ settings: next });
   saveStatus.textContent = "Préférences enregistrées.";
