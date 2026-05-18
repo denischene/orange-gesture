@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { DownloadButton } from "@/components/download-button";
+import { BrowserIcon } from "@/components/browser-icon";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -52,8 +53,14 @@ function Index() {
               </h1>
               <p className="mt-5 text-lg text-muted-foreground max-w-prose">
                 Orange Gesture Control est l'extension de navigation gestuelle
-                née chez Orange Labs, modernisée pour la dernière version de
-                Firefox. Maintenez le clic droit, dessinez le geste, relâchez —
+                née chez Orange Labs, modernisée pour{" "}
+                <BrowserIcon name="firefox" />Firefox,{" "}
+                <BrowserIcon name="chrome" />Chrome,{" "}
+                <BrowserIcon name="edge" />Edge,{" "}
+                <BrowserIcon name="opera" />Opera,{" "}
+                <BrowserIcon name="brave" />Brave.
+                <br />
+                Maintenez le clic droit, dessinez le geste, relâchez —
                 l'action se déclenche.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
