@@ -13,6 +13,18 @@
   function clearHide() {
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
   }
+  function speak(text) {
+    try {
+      const synth = window.speechSynthesis;
+      if (!synth || !text) return;
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(String(text));
+      u.lang = "fr-FR";
+      u.rate = 1;
+      u.pitch = 1;
+      synth.speak(u);
+    } catch (e) { /* ignore */ }
+  }
   window.OGC_Tooltips = {
     show(text) {
       ensure();
@@ -40,6 +52,7 @@
   browser.runtime.onMessage.addListener((msg) => {
     if (msg?.type === "ogc.feedback") {
       window.OGC_Tooltips.showAction(msg.label, msg.long);
+      if (msg.voice) speak(msg.label);
     }
   });
 })();

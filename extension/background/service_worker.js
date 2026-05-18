@@ -28,7 +28,7 @@ for (const g of GESTURES.gestures) {
 
 const DEFAULT_SETTINGS = {
   enabled: true, button: 2, trails: true, tooltips: true, sensitivity: 24,
-  repeatEnabled: true
+  repeatEnabled: true, voice: false
 };
 
 let SETTINGS = { ...DEFAULT_SETTINGS };
@@ -452,7 +452,8 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   browser.tabs.sendMessage(tab.id, {
     type: "ogc.feedback",
     label: labelText,
-    long: !!ctx.longPress
+    long: !!ctx.longPress,
+    voice: !!SETTINGS.voice
   }).catch(() => {});
 
   let firstResult;

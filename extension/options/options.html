@@ -63,6 +63,19 @@
             <p class="ogc-hint">Par défaut les répétitions en appui long sont activées.</p>
           </fieldset>
 
+          <fieldset class="ogc-field">
+            <legend>Retours vocaux</legend>
+            <div class="ogc-segmented" role="radiogroup">
+              <label><input type="radio" name="voice" value="on" /><span>Avec vocalisation</span></label>
+              <label><input type="radio" name="voice" value="off" /><span>Sans vocalisation</span></label>
+            </div>
+            <p class="ogc-hint">
+              Lorsque la vocalisation est activée, le nom de la commande reconnue
+              (par exemple « Monter » ou « Monter (répété) ») est prononcé à voix
+              haute via la synthèse vocale du navigateur. Désactivée par défaut.
+            </p>
+          </fieldset>
+
           <div class="ogc-actions">
             <span id="ogc-save-status" class="ogc-status" aria-live="polite"></span>
           </div>
