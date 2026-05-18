@@ -224,9 +224,10 @@ function Memo() {
           Mémo des gestes
         </h1>
         <p className="mt-2 text-muted-foreground max-w-2xl">
-          Survolez une vignette pour voir l'animation. Le point orange marque la
-          fin du tracé&nbsp;: lorsqu'il grossit, l'appui long s'active et la
-          fonction associée remplace la fonction principale pendant 2&nbsp;secondes.
+          Survolez une vignette pour voir l'animation.
+          <br />
+          Les gestes avec un point orange ont une seconde fonction activable
+          par un appui long en fin de geste.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button
