@@ -79,7 +79,7 @@ function Index() {
             </div>
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <div className="aspect-square w-full rounded-xl flex items-center justify-center bg-secondary text-foreground">
-                <svg viewBox="0 0 200 140" className="w-3/4 h-3/4">
+                <svg viewBox="0 0 200 140" className="w-3/4 h-3/4" role="img" aria-hidden="true" focusable="false">
                   {/* left→right arch (top-of-arc), then small return */}
                   <path
                     d="M30 110 Q100 -20 170 110 L150 90"
