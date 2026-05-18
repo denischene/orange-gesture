@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { BrowserIcon } from "@/components/browser-icon";
 
 type Browser = {
-  key: string;
+  key: "firefox" | "chrome" | "edge" | "opera" | "brave";
   label: string;
   href: string;
   hint: string;
@@ -76,7 +77,10 @@ export function DownloadButton({
               onClick={() => setOpen(false)}
               className="flex items-start justify-between gap-3 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
             >
-              <span className="font-medium text-foreground">{b.label}</span>
+              <span className="font-medium text-foreground inline-flex items-center">
+                <BrowserIcon name={b.key} />
+                {b.label}
+              </span>
               <span className="text-xs text-muted-foreground">{b.hint}</span>
             </a>
           ))}
