@@ -7,6 +7,16 @@ import "../lib/storage.js";
 import { recognizeAction, preload } from "./wasm_loader.js";
 import GESTURES from "../data/gestures.data.js";
 
+// Détection navigateur — utilisée pour les URLs «accueil navigateur»
+// (chaque famille de navigateurs a sa propre page d'accueil interne).
+const IS_FIREFOX = !!browser.runtime?.getBrowserInfo;
+function browserHomeUrl() {
+  if (IS_FIREFOX) return "about:home";
+  // Chromium (Chrome, Edge, Opera, Brave) : la page d'accueil interne
+  // est la nouvelle page d'onglet.
+  return "chrome://newtab/";
+}
+
 // Build the runtime vocabulary from the single JSON source of truth.
 // Every canonical sequence + every alias maps to the same entry so the
 // JS fallback (when WASM fails) and the fuzzy matcher share one table.
@@ -141,7 +151,7 @@ const ACTIONS = {
   "page.bottom":    async (tab) => scrollExtreme(tab, "bottom"),
   "site.home":      async (tab, ctx) => {
     if (ctx?.longPress) {
-      let url = "about:home";
+      let url = browserHomeUrl();
       try {
         const hp = await browser.browserSettings?.homepageOverride?.get?.({});
         if (hp?.value) url = String(hp.value).split("|")[0].trim() || url;
@@ -215,17 +225,32 @@ const ACTIONS = {
   "tab.next":       async (tab) => cycleTab(tab, +1),
   "tab.prev":       async (tab) => cycleTab(tab, -1),
   "tab.close":      async (tab) => {
-    await browser.tabs.remove(tab.id);
-    // Après fermeture, l'onglet d'origine n'existe plus : on récupère le
-    // nouvel onglet actif et on lui transmet l'état d'appui long pour que
-    // la boucle de répétition continue de pinger le bon document.
+    // On bascule d'abord vers l'onglet voisin pour pouvoir y faire parvenir
+    // le retour visuel/vocal (l'onglet courant est sur le point d'être
+    // détruit, son content script ne pourra ni afficher ni vocaliser).
+    let nextTab = null;
     try {
-      const [next] = await browser.tabs.query({ active: true, windowId: tab.windowId });
-      if (next && next.id !== tab.id) {
-        try { await browser.tabs.sendMessage(next.id, { type: "ogc.adoptLongPress" }); } catch {}
-        return { pressTabId: next.id };
-      }
+      const tabs = await browser.tabs.query({ windowId: tab.windowId });
+      const sorted = tabs.sort((a, b) => a.index - b.index);
+      const i = sorted.findIndex((t) => t.id === tab.id);
+      nextTab = sorted[i + 1] || sorted[i - 1] || null;
     } catch {}
+    if (nextTab) {
+      try { await browser.tabs.update(nextTab.id, { active: true }); } catch {}
+      try {
+        await browser.tabs.sendMessage(nextTab.id, {
+          type: "ogc.feedback",
+          label: "Fermer onglet",
+          long: false,
+          voice: !!SETTINGS.voice
+        });
+      } catch {}
+    }
+    await browser.tabs.remove(tab.id);
+    if (nextTab) {
+      try { await browser.tabs.sendMessage(nextTab.id, { type: "ogc.adoptLongPress" }); } catch {}
+      return { pressTabId: nextTab.id, skipFeedback: true };
+    }
     return false;
   },
   "window.maximize":async () => cycleWindowState(+1),
@@ -448,13 +473,27 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   if (!handler) return;
 
   // Send tooltip feedback to the page (FR label).
-  const labelText = ctx.longPress && entry.longLabel ? entry.longLabel : entry.label;
-  browser.tabs.sendMessage(tab.id, {
-    type: "ogc.feedback",
-    label: labelText,
-    long: !!ctx.longPress,
-    voice: !!SETTINGS.voice
-  }).catch(() => {});
+  // Étiquette contextuelle : certains gestes changent de sens selon le
+  // contexte (sélection de texte, champ de saisie). On annonce alors
+  // l'action réellement effectuée plutôt que le libellé générique.
+  let labelText = ctx.longPress && entry.longLabel ? entry.longLabel : entry.label;
+  if (!ctx.longPress) {
+    if (entry.action === "scroll.up" && (ctx.selection || "").trim()) {
+      labelText = "Copier";
+    } else if (entry.action === "scroll.down" && ctx.inEditable) {
+      labelText = "Coller";
+    }
+  }
+  // L'action tab.close gère elle-même son feedback (envoyé à l'onglet
+  // voisin, le courant étant détruit). On laisse le handler s'en occuper.
+  if (entry.action !== "tab.close") {
+    browser.tabs.sendMessage(tab.id, {
+      type: "ogc.feedback",
+      label: labelText,
+      long: !!ctx.longPress,
+      voice: !!SETTINGS.voice
+    }).catch(() => {});
+  }
 
   let firstResult;
   try { firstResult = await handler(tab, ctx); }
