@@ -503,7 +503,11 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
   // gestes répétables, sauf si la première exécution a déjà demandé l'arrêt.
   if (ctx.longPress && entry.repeat && firstResult !== false && SETTINGS.repeatEnabled !== false) {
     const token = Symbol("repeat");
-    activeRepeat = { token, timer: null, pressTabId: tab.id };
+    // Pour `tab.close`, l'onglet d'origine vient d'être détruit : le handler
+    // renvoie l'id de l'onglet voisin (où le content script a adopté
+    // l'appui long). On part de cet id-là pour pinger la suite.
+    const initialPressTabId = (firstResult && firstResult.pressTabId) || tab.id;
+    activeRepeat = { token, timer: null, pressTabId: initialPressTabId };
     scheduleRepeat(entry, handler, tab, ctx, token);
   }
 });
