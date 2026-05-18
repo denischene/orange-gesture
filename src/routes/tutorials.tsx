@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { DownloadButton } from "@/components/download-button";
+import { BrowserIcon } from "@/components/browser-icon";
 
 export const Route = createFileRoute("/tutorials")({
   component: Tutorials,
@@ -21,8 +22,12 @@ const STEPS = [
     title: "Téléchargez l'extension",
     body: (
       <>
-        Téléchargez l'extension pour votre navigateur (Firefox, Chrome, Edge,
-        Opera, Brave) :
+        Téléchargez l'extension pour votre navigateur (
+        <BrowserIcon name="firefox" />Firefox,{" "}
+        <BrowserIcon name="chrome" />Chrome,{" "}
+        <BrowserIcon name="edge" />Edge,{" "}
+        <BrowserIcon name="opera" />Opera,{" "}
+        <BrowserIcon name="brave" />Brave) :
         <span className="mt-2 inline-block">
           <DownloadButton />
         </span>
@@ -33,11 +38,30 @@ const STEPS = [
     n: 2,
     title: "Installez en mode développeur",
     body: (
-      <>
-        Ouvrez <code>about:debugging#/runtime/this-firefox</code>, cliquez sur{" "}
-        <em>Charger un module complémentaire temporaire</em>, puis sélectionnez
-        le fichier <code>ogc.xpi</code>.
-      </>
+      <div className="space-y-2">
+        <div>
+          <BrowserIcon name="firefox" />
+          <strong>Firefox</strong> : ouvrez{" "}
+          <code>about:debugging#/runtime/this-firefox</code>, cliquez sur{" "}
+          <em>Charger un module complémentaire temporaire</em>, puis
+          sélectionnez le fichier <code>ogc.xpi</code>.
+        </div>
+        <div>
+          <BrowserIcon name="edge" />
+          <strong>Edge</strong> : décompressez d'abord le fichier{" "}
+          <code>ogc.zip</code> dans un dossier. Ouvrez ensuite{" "}
+          <code>edge://extensions/</code>, activez le mode développeur, puis
+          cliquez sur <em>Charger l'extension décompressée</em>.
+        </div>
+        <div>
+          <BrowserIcon name="chrome" />
+          <strong>Chrome</strong> (et <BrowserIcon name="opera" />Opera,{" "}
+          <BrowserIcon name="brave" />Brave) : décompressez d'abord le fichier{" "}
+          <code>ogc.zip</code> dans un dossier. Ouvrez ensuite{" "}
+          <code>chrome://extensions/</code>, activez le mode développeur, puis
+          cliquez sur <em>Charger l'extension non empaquetée</em>.
+        </div>
+      </div>
     ),
   },
   {
@@ -83,13 +107,13 @@ function Tutorials() {
           >
             <span
               className="shrink-0 h-10 w-10 rounded-full text-primary-foreground font-semibold flex items-center justify-center"
-              style={{ background: "var(--gradient-primary)" }}
+              style={{ background: "var(--gradient-primary)", color: "#000" }}
             >
               {s.n}
             </span>
             <div>
               <h2 className="font-semibold mb-1">{s.title}</h2>
-              <p className="text-sm text-muted-foreground">{s.body}</p>
+              <div className="text-sm text-muted-foreground">{s.body}</div>
             </div>
           </li>
         ))}
