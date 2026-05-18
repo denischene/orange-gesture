@@ -31,19 +31,26 @@
 
   // Le background interroge périodiquement l'onglet actif pour savoir si
   // l'appui long est toujours en cours avant de répéter l'action.
-  browser.runtime.onMessage.addListener((msg) => {
+  // On utilise sendResponse + `return true` plutôt que de renvoyer une
+  // Promise : c'est le seul motif fiable sur Chromium (Chrome, Edge, Opera,
+  // Brave) — sur Edge en particulier, renvoyer une Promise depuis le
+  // listener ne déclenche pas la réponse côté background.
+  browser.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg?.type === "ogc.pingLongPress") {
-      return Promise.resolve({ active: longPressActive });
+      sendResponse({ active: longPressActive });
+      return true;
     }
     if (msg?.type === "ogc.adoptLongPress") {
       active = true;
       longPressFired = true;
       longPressActive = true;
-      return Promise.resolve({ active: true });
+      sendResponse({ active: true });
+      return true;
     }
     if (msg?.type === "ogc.toggleHelpPanel") {
       toggleHelpPanel();
-      return Promise.resolve({ ok: true });
+      sendResponse({ ok: true });
+      return true;
     }
   });
 
