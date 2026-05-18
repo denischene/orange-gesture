@@ -15,6 +15,11 @@
   let longPressActive = false;
   // Premier hyperlien rencontré pendant le geste (au démarrage ou en cours).
   let firstLinkHref = null;
+  // Sélection au moment du pointerdown : sur Chromium le clic droit peut
+  // l'effacer immédiatement, on la fige donc dès le début du geste pour
+  // que «Copier» et «Rechercher avec présélection» fonctionnent.
+  let initialSelection = "";
+  let initialEditable = false;
   let settings = { enabled: true, button: 2, trails: true, tooltips: true };
 
   browser.storage.local.get("settings").then((s) => {
@@ -70,10 +75,11 @@
   }
 
   function buildContext() {
-    const sel = window.getSelection?.()?.toString?.() ?? "";
+    const liveSel = window.getSelection?.()?.toString?.() ?? "";
+    const sel = liveSel || initialSelection || "";
     const link = downTarget?.closest?.("a[href]");
     const img  = downTarget?.closest?.("img[src]");
-    const editable = !!downTarget?.closest?.(
+    const editable = initialEditable || !!downTarget?.closest?.(
       "input, textarea, [contenteditable=''], [contenteditable='true']"
     );
     return {
@@ -126,6 +132,11 @@
     longPressActive = false;
     downTarget = e.target;
     firstLinkHref = null;
+    try { initialSelection = window.getSelection?.()?.toString?.() ?? ""; }
+    catch { initialSelection = ""; }
+    initialEditable = !!e.target?.closest?.(
+      "input, textarea, [contenteditable=''], [contenteditable='true']"
+    );
     recognizer.reset();
     points.length = 0;
     points.push([e.clientX, e.clientY]);
