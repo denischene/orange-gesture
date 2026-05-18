@@ -1,5 +1,6 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import { DownloadButton } from "@/components/download-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV = [
   { to: "/", label: "Accueil" },
@@ -37,6 +38,7 @@ export function SiteLayout() {
               );
             })}
             <DownloadButton variant="nav" />
+            <ThemeToggle />
           </nav>
         </div>
       </header>
