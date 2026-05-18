@@ -51,8 +51,8 @@ function Help() {
         <p className="text-muted-foreground">
           Certaines commandes possèdent une fonction supplémentaire si l'on
           maintient le bouton appuyé en fin de geste (répétition automatique,
-          défilement dans une liste…). Elles sont indiquées par{" "}
-          <em>(AL)</em> dans le mémo.
+          défilement dans une liste…). Elles sont indiquées par un point
+          orange dans le mémo.
         </p>
       </Section>
 
@@ -66,10 +66,9 @@ function Help() {
 
       <Section title="Configuration">
         <p className="text-muted-foreground">
-          Les préférences (bouton de tracé, sensibilité, affichage des
-          tracés et des info-bulles) sont accessibles depuis la page d'options
-          de l'extension :{" "}
-          <code>about:addons → Orange Gesture Control → Préférences</code>.
+          Les préférences (bouton souris à appuyer, personnalisation des
+          gestes) sont accessibles depuis le geste point d'interrogation –?–
+          (sur une page web, mais pas sur les pages par défaut du navigateur).
         </p>
       </Section>
 
