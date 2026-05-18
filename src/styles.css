@@ -221,3 +221,19 @@ a.ogc-btn-link:active {
   background-color: #fff !important;
   color: #000 !important;
 }
+
+/* Dark mode : the gesture animations (PNG/GIF) are dark arrows on white.
+ * Invert them so they appear white on the dark background, keep proportions. */
+.dark .ogc-gesture-img {
+  filter: invert(1) hue-rotate(180deg);
+}
+/* The brutal hover override above forces black bg / white text on every button.
+ * Re-allow the theme toggle to use its own tokens so the icon stays visible. */
+button.ogc-theme-toggle:hover {
+  background-color: var(--accent) !important;
+  color: var(--foreground) !important;
+}
+button.ogc-theme-toggle:active {
+  background-color: var(--card) !important;
+  color: var(--foreground) !important;
+}
