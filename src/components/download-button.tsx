@@ -10,10 +10,10 @@ type Browser = {
 
 const BROWSERS: Browser[] = [
   { key: "firefox", label: "Firefox", href: "/ogc.xpi", hint: "Fichier .xpi" },
-  { key: "chrome", label: "Chrome", href: "/ogc.zip", hint: "Archive .zip (mode développeur)" },
-  { key: "edge", label: "Edge", href: "/ogc.zip", hint: "Archive .zip (mode développeur)" },
-  { key: "opera", label: "Opera", href: "/ogc.zip", hint: "Archive .zip (mode développeur)" },
-  { key: "brave", label: "Brave", href: "/ogc.zip", hint: "Archive .zip (mode développeur)" },
+  { key: "chrome", label: "Chrome", href: "/ogc-chrome.zip", hint: "Archive .zip (mode développeur)" },
+  { key: "edge", label: "Edge", href: "/ogc-edge.zip", hint: "Archive .zip (mode développeur)" },
+  { key: "opera", label: "Opera", href: "/ogc-opera.zip", hint: "Archive .zip (mode développeur)" },
+  { key: "brave", label: "Brave", href: "/ogc-brave.zip", hint: "Archive .zip (mode développeur)" },
 ];
 
 export function DownloadButton({
