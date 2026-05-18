@@ -27,28 +27,29 @@ type Gesture = {
   dot: DotPos;
   note?: string;
   custom?: "home" | "newtab"; // inline SVG instead of png/gif
+  alt?: string;
 };
 
 const GESTURES: Gesture[] = [
-  { name: "interogation",          title: "Aide",                          sequence: "UURRDDLDD",                                              dot: "none" },
-  { name: "top_bottom",            title: "Descendre",                     longTitle: "Descendre (répété)",           sequence: "D",            dot: "bottom", note: "Dans un champ : Coller" },
-  { name: "bottom_top",            title: "Monter",                        longTitle: "Monter (répété)",              sequence: "U",            dot: "top",    note: "Sur sélection : Copier" },
-  { name: "left_right_bottom",     title: "Bas de page",                   sequence: "RD",                                                     dot: "none" },
-  { name: "left_right_top",        title: "Haut de page",                  sequence: "RU",                                                     dot: "none" },
-  { name: "right_left",            title: "Page précédente",               longTitle: "Page précédente répétée",      sequence: "L",            dot: "left" },
-  { name: "left_right",            title: "Page suivante",                 longTitle: "Page suivante répétée",        sequence: "R",            dot: "right" },
-  { name: "right_left_triangle",   title: "Page d'accueil du site",        longTitle: "Page d'accueil du navigateur", sequence: "LURDR",        dot: "bottom-right" },
-  { name: "clockwise_circle",      title: "Zoomer",                        longTitle: "Zoom progressif (+10%)",       sequence: "DRDDLLLUURUR", dot: "top-right" },
-  { name: "anticlockwise_circle",  title: "Dézoomer",                      longTitle: "Dézoom progressif (−10%)",     sequence: "LDLDDRRULUUL", dot: "top-left" },
-  { name: "bottom_left_top_right", title: "Agrandir fenêtre",              longTitle: "État fenêtre suivant",         sequence: "UR",           dot: "top-right" },
-  { name: "top_right_bottom_left", title: "Réduire fenêtre",               longTitle: "État fenêtre précédent",       sequence: "DL",           dot: "bottom-left" },
-  { name: "right_left_arch",       title: "Onglet précédent",              longTitle: "Onglet précédent répété",      sequence: "DDLLULU",      dot: "bottom-left" },
-  { name: "left_right_arch",       title: "Onglet suivant",                longTitle: "Onglet suivant répété",        sequence: "URRDRD",       dot: "bottom-right" },
-  { name: "top_down_arch",         title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bottom-right", note: "Sur lien : ouvre le lien" },
-  { name: "alpha",                 title: "Fermer",                        longTitle: "Fermer répété",                sequence: "DRULDR",       dot: "right" },
-  { name: "magnifying_glass",      title: "Rechercher sur internet",       longTitle: "Rechercher dans la page",      sequence: "URUURRDLDDL",  dot: "bottom-left" },
-  { name: "left_right_heart",      title: "Ajouter aux favoris",           sequence: "LRULRD",                                                 dot: "right" },
-  { name: "vertical_ribbon",       title: "Enregistrer sous…",             sequence: "DDRURUULL",                                              dot: "none" },
+  { name: "interogation",          title: "Aide",                          sequence: "UURRDDLDD",                                              dot: "none", alt: "Aide = geste point d’interrogation" },
+  { name: "top_bottom",            title: "Descendre",                     longTitle: "Descendre (répété)",           sequence: "D",            dot: "bottom", note: "Dans un champ : Coller", alt: "Descendre dans la page = geste trait vers le bas. Depuis un champ de saisi, exécute à la place la fonction coller" },
+  { name: "bottom_top",            title: "Monter",                        longTitle: "Monter (répété)",              sequence: "U",            dot: "top",    note: "Sur sélection : Copier", alt: "Monter dans la page = geste trait vers le haut. Depuis une sélection textuelle, exécute à la place la fonction copier" },
+  { name: "left_right_bottom",     title: "Bas de page",                   sequence: "RD",                                                     dot: "none", alt: "Aller en bas de page = trait horizontal puis vers le bas" },
+  { name: "left_right_top",        title: "Haut de page",                  sequence: "RU",                                                     dot: "none", alt: "Aller en haut de page = trait horizontal puis vers le haut" },
+  { name: "right_left",            title: "Page précédente",               longTitle: "Page précédente répétée",      sequence: "L",            dot: "left", alt: "Aller à la page précédente = trait horizontal vers la gauche, un appui long fait remonter de plusieurs pages" },
+  { name: "left_right",            title: "Page suivante",                 longTitle: "Page suivante répétée",        sequence: "R",            dot: "right", alt: "Aller à la page suivante = trait horizontal vers la droite, un appui long fait avancer de plusieurs pages" },
+  { name: "right_left_triangle",   title: "Page d'accueil du site",        longTitle: "Page d'accueil du navigateur", sequence: "LURDR",        dot: "bottom-right", alt: "Aller à la page d’accueil du site web = trait horizontal vers la gauche puis diagonale pour faire un retour en forme de triangle, un appui long fait un retour à la page d’accueil du navigateur" },
+  { name: "clockwise_circle",      title: "Zoomer",                        longTitle: "Zoom progressif (+10%)",       sequence: "DRDDLLLUURUR", dot: "top-right", alt: "Zoomer = faire un cercle vers le bas et la gauche–sens horaire, un appui long répète le zoom" },
+  { name: "anticlockwise_circle",  title: "Dézoomer",                      longTitle: "Dézoom progressif (−10%)",     sequence: "LDLDDRRULUUL", dot: "top-left", alt: "Dézoomer = faire un cercle vers le bas et la droite–sens anti-horaire, un appui long répète le dézoom" },
+  { name: "bottom_left_top_right", title: "Agrandir fenêtre",              longTitle: "État fenêtre suivant",         sequence: "UR",           dot: "top-right", alt: "Agrandir la fenêtre = geste diagonal vers le haut-droite, un appui long répète la commande" },
+  { name: "top_right_bottom_left", title: "Réduire fenêtre",               longTitle: "État fenêtre précédent",       sequence: "DL",           dot: "bottom-left", alt: "Réduire la fenêtre = geste diagonal vers le bas-gauche, un appui long répète la commande" },
+  { name: "right_left_arch",       title: "Onglet précédent",              longTitle: "Onglet précédent répété",      sequence: "DDLLULU",      dot: "bottom-left", alt: "Onglet précédent = geste d’arc de cercle haut-gauche, un appui long répète la commande" },
+  { name: "left_right_arch",       title: "Onglet suivant",                longTitle: "Onglet suivant répété",        sequence: "URRDRD",       dot: "bottom-right", alt: "Onglet suivant = geste d’arc de cercle haut-droite, un appui long répète la commande" },
+  { name: "top_down_arch",         title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bottom-right", note: "Sur lien : ouvre le lien", alt: "Nouvel onglet = geste bas suivi d’un arc de cercle haut-droite, comme un h" },
+  { name: "alpha",                 title: "Fermer",                        longTitle: "Fermer répété",                sequence: "DRULDR",       dot: "right", alt: "Fermer = geste alpha, comme un x arrondi sans lever le doigt" },
+  { name: "magnifying_glass",      title: "Rechercher sur internet",       longTitle: "Rechercher dans la page",      sequence: "URUURRDLDDL",  dot: "bottom-left", alt: "Rechercher sur internet = geste en forme de loupe, une diagonale haut-droite suivie d’un cercle en sens horaire, si sélection préalable, la recherche se fait sur cette sélection, si appui long en fin de geste la recherche s’effectue intrapage" },
+  { name: "left_right_heart",      title: "Ajouter aux favoris",           sequence: "LRULRD",                                                 dot: "right", alt: "Ajouter aux favoris = un trait vers la droite interrompu par un pic, qui revient sur la ligne et reprend vers la droite" },
+  { name: "vertical_ribbon",       title: "Enregistrer sous…",             sequence: "DDRURUULL",                                              dot: "none", alt: "Enregistrer sous = un geste en forme d’hameçon qui descend verticalement et en fin de geste forme une boucle droite sur sa hampe" },
 ];
 
 const DOT_POS: Record<Exclude<DotPos, "none">, React.CSSProperties> = {
@@ -162,15 +163,15 @@ function GestureCard({ g }: { g: Gesture }) {
           <>
             <img
               src={`/img/${g.name}.png`}
-              alt={g.title}
-              className="absolute inset-0 h-28 w-28 object-contain group-hover:opacity-0 transition-opacity"
+              alt={g.alt || g.title}
+              className="ogc-gesture-img absolute inset-0 h-28 w-28 object-contain group-hover:opacity-0 transition-opacity"
               loading="lazy"
             />
             <img
               src={`/img/${g.name}.gif`}
               alt=""
               aria-hidden
-              className="absolute inset-0 h-28 w-28 object-contain opacity-0 group-hover:opacity-100 transition-opacity"
+              className="ogc-gesture-img absolute inset-0 h-28 w-28 object-contain opacity-0 group-hover:opacity-100 transition-opacity"
               loading="lazy"
               onError={(e) => { (e.currentTarget as HTMLImageElement).src = `/img/${g.name}.png`; }}
             />
