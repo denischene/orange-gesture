@@ -343,11 +343,36 @@ async function navigateAndAdopt(tab, navFn) {
 }
 
 async function scrollExtreme(tab, where) {
+  // allFrames: true permet de défiler aussi à l'intérieur des iframes
+  // (lecteur PDF SharePoint, pdf.js embarqué, etc.). On vise au passage
+  // l'élément interne le plus haut qui soit réellement scrollable, car
+  // sur certains visualiseurs PDF ce n'est ni window ni document.body.
   await browser.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: (w) => window.scrollTo({ top: w === "top" ? 0 : document.body.scrollHeight, behavior: "smooth" }),
+    target: { tabId: tab.id, allFrames: true },
+    func: (w) => {
+      const top = w === "top";
+      // 1) défile la fenêtre
+      try {
+        window.scrollTo({ top: top ? 0 : document.documentElement.scrollHeight, behavior: "smooth" });
+      } catch {}
+      // 2) défile aussi le plus grand conteneur scrollable interne
+      let best = null, bestArea = 0;
+      const all = document.querySelectorAll("*");
+      for (let i = 0; i < all.length && i < 4000; i++) {
+        const el = all[i];
+        if (el.scrollHeight - el.clientHeight < 40) continue;
+        const cs = getComputedStyle(el);
+        if (!/(auto|scroll|overlay)/.test(cs.overflowY)) continue;
+        const area = el.clientWidth * el.clientHeight;
+        if (area > bestArea) { best = el; bestArea = area; }
+      }
+      if (best) {
+        try { best.scrollTo({ top: top ? 0 : best.scrollHeight, behavior: "smooth" }); }
+        catch { best.scrollTop = top ? 0 : best.scrollHeight; }
+      }
+    },
     args: [where]
-  });
+  }).catch(() => {});
 }
 
 async function contextualScroll(tab, ctx, dir) {
@@ -385,10 +410,29 @@ async function contextualScroll(tab, ctx, dir) {
   }
   const step = dir === "up" ? -300 : 300;
   return browser.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: (s) => window.scrollBy({ top: s, behavior: "smooth" }),
+    target: { tabId: tab.id, allFrames: true },
+    func: (s) => {
+      // Défile la fenêtre…
+      try { window.scrollBy({ top: s, behavior: "smooth" }); } catch {}
+      // …et le plus grand conteneur scrollable interne (lecteurs PDF
+      // SharePoint, pdf.js, viewers custom où window n'est pas scrollable).
+      let best = null, bestArea = 0;
+      const all = document.querySelectorAll("*");
+      for (let i = 0; i < all.length && i < 4000; i++) {
+        const el = all[i];
+        if (el.scrollHeight - el.clientHeight < 40) continue;
+        const cs = getComputedStyle(el);
+        if (!/(auto|scroll|overlay)/.test(cs.overflowY)) continue;
+        const area = el.clientWidth * el.clientHeight;
+        if (area > bestArea) { best = el; bestArea = area; }
+      }
+      if (best) {
+        try { best.scrollBy({ top: s, behavior: "smooth" }); }
+        catch { best.scrollTop += s; }
+      }
+    },
     args: [step]
-  });
+  }).catch(() => {});
 }
 
 async function zoomBy(tab, delta) {
