@@ -1,6 +1,6 @@
 // AUTO-GÉNÉRÉ par scripts/build-gesture-exports.mjs — ne pas éditer.
 // Source : extension/data/gestures.json
-export default {
+globalThis.OGC_GESTURES_DATA = {
   "version": "2.0.0",
   "description": "Orange Gesture Control — vocabulaire des gestes (source unique de vérité). Tout dérivé : runtime JS, en-tête C++ embarqué dans le WASM, exports publics JSON et RDF.",
   "directions": [

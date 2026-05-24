@@ -125,11 +125,12 @@ const vocabJs = [
 ].join("\n");
 writeFileSync(resolve(ROOT, "extension/lib/vocabulary.js"), vocabJs);
 
-/* ---------- extension/data/gestures.data.js (ESM, for service worker) ---------- */
-// JSON import assertions aren't universal in MV3 service workers yet, so we
-// expose the vocabulary as a plain ES module export.
+/* ---------- extension/data/gestures.data.js (classic global, for service worker) ---------- */
+// On expose la donnée via globalThis pour rester chargeable à la fois en
+// module ES (Chromium) ET en script classique (event-page Firefox, ou
+// importScripts dans un service worker non-module).
 const dataJs =
   "// AUTO-GÉNÉRÉ par scripts/build-gesture-exports.mjs — ne pas éditer.\n" +
   "// Source : extension/data/gestures.json\n" +
-  "export default " + JSON.stringify(vocab, null, 2) + ";\n";
+  "globalThis.OGC_GESTURES_DATA = " + JSON.stringify(vocab, null, 2) + ";\n";
 writeFileSync(resolve(ROOT, "extension/data/gestures.data.js"), dataJs);
