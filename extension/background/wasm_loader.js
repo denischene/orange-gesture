@@ -5,7 +5,12 @@
  *
  * The wasm module is built as STANDALONE_WASM (no Emscripten JS glue), so the
  * only import it needs is a memory object — provided here.
+ *
+ * Chargé en script CLASSIQUE (pas un module ES) — expose ses fonctions
+ * publiques via globalThis.OGC_WASM pour rester compatible avec les
+ * event-pages Firefox et les service workers Chromium en mode classique.
  */
+(function () {
 
 const DIR_CHARS = ["R", "UR", "U", "UL", "L", "DL", "D", "DR"];
 const MIN_SEGMENT = 24;
@@ -84,7 +89,7 @@ function readCString(memory, ptr) {
   return new TextDecoder("utf-8").decode(view.subarray(ptr, end));
 }
 
-export async function recognizeStroke(points) {
+async function recognizeStroke(points) {
   if (wasmDisabled) return recognizeStrokeJS(points);
 
   let wasm;
@@ -119,7 +124,7 @@ export async function recognizeStroke(points) {
  * Returns { sequence, actionId, actionName } where actionId is null if no
  * embedded entry matched (caller can then fall back to fuzzy matching in JS).
  */
-export async function recognizeAction(points) {
+async function recognizeAction(points) {
   const sequence = await recognizeStroke(points);
   if (wasmDisabled) return { sequence, actionId: null, actionName: null };
   try {
@@ -144,10 +149,13 @@ export async function recognizeAction(points) {
 // Warm the module at startup so the first gesture has zero latency.
 // If preload fails, mark WASM disabled so the very first stroke skips the
 // retry attempt and goes straight to the JS fallback.
-export function preload() {
+function preload() {
   instantiate().catch((err) => {
     console.warn("[OGC] wasm preload failed, JS fallback will be used:", err);
     wasmDisabled = true;
     modulePromise = null;
   });
 }
+
+globalThis.OGC_WASM = { recognizeStroke, recognizeAction, preload };
+})();
