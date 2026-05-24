@@ -1,11 +1,30 @@
 /* Background service worker — dispatches recognized gestures.
  * Uses WASM recognizer with JS fallback, plus a fuzzy matcher so users
  * don't have to draw the exact canonical sequence.
+ *
+ * Chargé en script CLASSIQUE (pas un module ES) pour rester compatible
+ * avec Firefox MV3 event-pages (qui n'acceptent pas toujours
+ * "type":"module"), notamment sur macOS. Les dépendances sont chargées
+ * via importScripts() côté Chromium (service worker) et via la liste
+ * background.scripts côté Firefox (event page).
  */
-import "../lib/compat.js";
-import "../lib/storage.js";
-import { recognizeAction, preload } from "./wasm_loader.js";
-import GESTURES from "../data/gestures.data.js";
+if (typeof importScripts === "function" && !globalThis.OGC_GESTURES_DATA) {
+  try {
+    importScripts(
+      "../lib/compat.js",
+      "../lib/storage.js",
+      "../data/gestures.data.js",
+      "./wasm_loader.js"
+    );
+  } catch (e) {
+    console.error("[OGC] importScripts failed", e);
+  }
+}
+const GESTURES = globalThis.OGC_GESTURES_DATA;
+const { recognizeAction, preload } = globalThis.OGC_WASM || {
+  recognizeAction: async () => ({ sequence: "", actionName: null }),
+  preload: () => {}
+};
 
 // Détection navigateur — utilisée pour les URLs «accueil navigateur»
 // (chaque famille de navigateurs a sa propre page d'accueil interne).
