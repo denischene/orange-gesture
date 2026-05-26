@@ -91,6 +91,43 @@ browser.runtime.onInstalled.addListener(async () => {
 browser.runtime.onStartup?.addListener(() => preload());
 preload();
 
+/* ---------- détection du lecteur PDF intégré de Firefox ----------
+ * Sur Firefox, le visualiseur PDF interne (pdf.js) s'exécute dans un
+ * contexte privilégié où les extensions ne peuvent injecter aucun content
+ * script : aucun geste ne peut donc y être reconnu. On le détecte au
+ * chargement de l'onglet et on prévient l'utilisateur via une notification.
+ */
+if (IS_FIREFOX) {
+  const NOTIFIED = new Set();
+  browser.tabs.onUpdated.addListener(async (tabId, info, tab) => {
+    if (info.status !== "complete") return;
+    const url = tab?.url || "";
+    if (!/\.pdf(\?|#|$)/i.test(url) && !/^file:.+\.pdf/i.test(url)) return;
+    // Ping le content script : s'il répond, c'est qu'on n'est PAS dans
+    // pdf.js (PDF servi en plugin tiers, viewer custom…) — rien à signaler.
+    let alive = false;
+    try {
+      const r = await Promise.race([
+        browser.tabs.sendMessage(tabId, { type: "ogc.pingLongPress" }),
+        new Promise((res) => setTimeout(() => res(null), 800))
+      ]);
+      alive = !!r;
+    } catch {}
+    if (alive) return;
+    if (NOTIFIED.has(tabId)) return;
+    NOTIFIED.add(tabId);
+    try {
+      await browser.notifications.create("ogc-pdfjs-" + tabId, {
+        type: "basic",
+        iconUrl: "icons/ogc-48.png",
+        title: "Orange Gesture Control",
+        message: "Le lecteur PDF intégré de Firefox n'accepte aucune extension : les gestes ne seront pas fonctionnels sur cette page."
+      });
+    } catch {}
+  });
+  browser.tabs.onRemoved?.addListener((tabId) => NOTIFIED.delete(tabId));
+}
+
 /* ---------- fuzzy matching ---------- */
 
 // Tokenize a sequence string into an array of direction tokens
