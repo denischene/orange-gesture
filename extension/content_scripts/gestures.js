@@ -133,8 +133,20 @@
 
   function onDown(e) {
     if (!settings.enabled || e.button !== settings.button) return;
+    // Empêche : (1) le navigateur d'ouvrir le menu contextuel au tout début
+    // d'un geste clic-droit — sur Firefox macOS le contextmenu est délivré
+    // dès le pointerdown, pas au pointerup ; (2) en mode clic-gauche, le
+    // démarrage d'un drag d'image / lien et la sélection de texte qui
+    // perturbent le tracé du geste.
+    suppressContext = true;
+    try { e.preventDefault(); } catch {}
+    try {
+      // Vide toute sélection déjà présente sous le pointeur (sinon Firefox
+      // l'étend au fur et à mesure que la souris bouge sur du texte).
+      const s = window.getSelection?.();
+      if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
+    } catch {}
     active = true;
-    suppressContext = false;
     longPressFired = false;
     longPressActive = false;
     downTarget = e.target;
@@ -156,6 +168,13 @@
 
   function onMove(e) {
     if (!active) return;
+    // Sur clic-gauche, le navigateur tente d'étendre la sélection / de
+    // démarrer un drag pendant qu'on dessine. On annule les deux.
+    try { e.preventDefault(); } catch {}
+    try {
+      const s = window.getSelection?.();
+      if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
+    } catch {}
     points.push([e.clientX, e.clientY]);
     recognizer.addPoint(e.clientX, e.clientY);
     captureLinkAt(e.clientX, e.clientY, e.target);
@@ -195,6 +214,22 @@
   window.addEventListener("pointerdown", onDown, true);
   window.addEventListener("pointermove", onMove, true);
   window.addEventListener("pointerup", onUp, true);
+  // Bloque le drag natif d'images / liens / texte sélectionné pendant un
+  // geste clic-gauche.
+  window.addEventListener("dragstart", (e) => {
+    if (active) { try { e.preventDefault(); } catch {} }
+  }, true);
+  // Bloque l'extension de sélection initiée par mousedown sur du texte.
+  window.addEventListener("selectstart", (e) => {
+    if (active && !initialEditable) { try { e.preventDefault(); } catch {} }
+  }, true);
+  // Sur clic-gauche, mousedown peut donner le focus + démarrer un drag avant
+  // pointerdown : on l'intercepte aussi.
+  window.addEventListener("mousedown", (e) => {
+    if (settings.enabled && e.button === settings.button && settings.button === 0) {
+      try { e.preventDefault(); } catch {}
+    }
+  }, true);
   window.addEventListener("pointercancel", () => {
     if (!active) { stopLongPressRepeat(); return; }
     active = false; clearTimers(); stopLongPressRepeat();
