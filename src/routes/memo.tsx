@@ -203,21 +203,6 @@ function GestureCard({ g }: { g: Gesture }) {
 }
 
 function Memo() {
-  const download = (path: string) => {
-    fetch(path)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.blob();
-      })
-      .then((blob) => {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = path.split("/").pop() || "ogc-gestures";
-        a.click();
-        URL.revokeObjectURL(a.href);
-      })
-      .catch((err) => alert("Téléchargement impossible : " + err.message));
-  };
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
       <header className="mb-8">
@@ -229,23 +214,6 @@ function Memo() {
           <br />
           Les gestes avec un point orange ont une seconde fonction activable
           par un appui long en fin de geste.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button
-            onClick={() => download("/ogc-gestures.json")}
-            className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium hover:bg-accent transition"
-          >
-            Télécharger le vocabulaire (JSON)
-          </button>
-          <button
-            onClick={() => download("/ogc-gestures.rdf")}
-            className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium hover:bg-accent transition"
-          >
-            Télécharger (RDF legacy)
-          </button>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Source unique embarquée dans le moteur C++/WebAssembly de l'extension.
         </p>
       </header>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
