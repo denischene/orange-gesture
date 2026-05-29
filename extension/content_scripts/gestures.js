@@ -140,6 +140,19 @@
     // perturbent le tracé du geste.
     suppressContext = true;
     try { e.preventDefault(); } catch {}
+    // Sur Firefox macOS, preventDefault sur pointerdown/mousedown ne
+    // suffit pas à inhiber la sélection texte qui se construit pendant
+    // le glissement. On force user-select:none sur tout le document le
+    // temps du geste, puis on rétablit à pointerup/cancel.
+    try {
+      const de = document.documentElement;
+      if (de && !de.hasAttribute("data-ogc-prev-userselect")) {
+        de.setAttribute("data-ogc-prev-userselect", de.style.userSelect || "");
+        de.style.userSelect = "none";
+        de.style.webkitUserSelect = "none";
+        de.style.MozUserSelect = "none";
+      }
+    } catch {}
     try {
       // Vide toute sélection déjà présente sous le pointeur (sinon Firefox
       // l'étend au fur et à mesure que la souris bouge sur du texte).
