@@ -54,7 +54,7 @@ function Index() {
               <p className="mt-5 text-lg text-muted-foreground max-w-prose">
                 Orange Gesture Control est l'extension de navigation gestuelle
                 née chez Orange Labs, modernisée pour{" "}
-                <BrowserIcon name="firefox" />Firefox,{" "}
+                <BrowserIcon name="firefox" />Firefox (sous Windows et sous Mac),{" "}
                 <BrowserIcon name="chrome" />Chrome,{" "}
                 <BrowserIcon name="edge" />Edge,{" "}
                 <BrowserIcon name="opera" />Opera,{" "}

@@ -10,6 +10,13 @@
   let lastMoveAt = 0;
   let longPressTimer = null;
   let longPressFired = false;
+  // Position du pointerdown ; sert à détecter si un véritable mouvement a
+  // eu lieu pendant l'appui (et donc si on doit inhiber le menu contextuel).
+  let downX = 0;
+  let downY = 0;
+  let movedDuringPress = false;
+  const MOVE_THRESHOLD_PX = 5;
+  const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent || "");
   // Visible to the background: true tant que l'utilisateur maintient le
   // pointeur appuyé après le déclenchement initial du long-press.
   let longPressActive = false;
@@ -133,13 +140,19 @@
 
   function onDown(e) {
     if (!settings.enabled || e.button !== settings.button) return;
-    // Empêche : (1) le navigateur d'ouvrir le menu contextuel au tout début
-    // d'un geste clic-droit — sur Firefox macOS le contextmenu est délivré
-    // dès le pointerdown, pas au pointerup ; (2) en mode clic-gauche, le
-    // démarrage d'un drag d'image / lien et la sélection de texte qui
-    // perturbent le tracé du geste.
-    suppressContext = true;
-    try { e.preventDefault(); } catch {}
+    // (1) En mode clic-gauche on bloque tout de suite la sélection / drag.
+    // (2) En mode clic-droit on ne suppose PAS encore qu'il y aura un
+    //     geste : on n'inhibe le menu contextuel qu'au premier déplacement
+    //     significatif (voir onMove). Exception : sur Firefox macOS le
+    //     contextmenu est délivré synchroniquement sur pointerdown, donc on
+    //     preventDefault le pointerdown pour le suspendre — si aucun
+    //     mouvement n'arrive, on rejouera un contextmenu synthétique sur
+    //     pointerup pour que le clic droit nu ouvre quand même le menu.
+    suppressContext = false;
+    movedDuringPress = false;
+    if (e.button === 0 || IS_MAC) {
+      try { e.preventDefault(); } catch {}
+    }
     // Sur Firefox macOS, preventDefault sur pointerdown/mousedown ne
     // suffit pas à inhiber la sélection texte qui se construit pendant
     // le glissement. On force user-select:none sur tout le document le
@@ -163,6 +176,8 @@
     longPressFired = false;
     longPressActive = false;
     downTarget = e.target;
+    downX = e.clientX;
+    downY = e.clientY;
     firstLinkHref = null;
     try { initialSelection = window.getSelection?.()?.toString?.() ?? ""; }
     catch { initialSelection = ""; }
@@ -181,6 +196,17 @@
 
   function onMove(e) {
     if (!active) return;
+    if (!movedDuringPress) {
+      const dx = e.clientX - downX;
+      const dy = e.clientY - downY;
+      if (dx*dx + dy*dy >= MOVE_THRESHOLD_PX * MOVE_THRESHOLD_PX) {
+        movedDuringPress = true;
+        // Mouvement réel → on bloque l'éventuel menu contextuel qui
+        // arriverait sur pointerup (Windows / Linux), et on inhibe la
+        // sélection / le drag pour la suite du geste.
+        suppressContext = true;
+      }
+    }
     // Sur clic-gauche, le navigateur tente d'étendre la sélection / de
     // démarrer un drag pendant qu'on dessine. On annule les deux.
     try { e.preventDefault(); } catch {}
@@ -208,6 +234,25 @@
     if (settings.trails) window.OGC_Trails?.end();
     setTimeout(() => window.OGC_Tooltips?.hide(), 1500);
     if (longPressFired) stopLongPressRepeat();
+    // Clic droit nu (aucun déplacement) → on laisse / on rejoue le menu
+    // contextuel système.
+    if (e.button === 2 && !movedDuringPress && previewSeq.length === 0) {
+      suppressContext = false;
+      if (IS_MAC) {
+        // Sur Firefox macOS le contextmenu d'origine a été inhibé par le
+        // preventDefault du pointerdown ; on en rejoue un sur la cible.
+        try {
+          const evt = new MouseEvent("contextmenu", {
+            bubbles: true, cancelable: true, view: window,
+            clientX: e.clientX, clientY: e.clientY,
+            screenX: e.screenX, screenY: e.screenY,
+            button: 2, buttons: 0,
+          });
+          (e.target || downTarget || document.documentElement).dispatchEvent(evt);
+        } catch {}
+      }
+      return;
+    }
     if (previewSeq.length > 0) {
       suppressContext = true;
       e.preventDefault();
