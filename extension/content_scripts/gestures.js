@@ -140,6 +140,19 @@
     // perturbent le tracé du geste.
     suppressContext = true;
     try { e.preventDefault(); } catch {}
+    // Sur Firefox macOS, preventDefault sur pointerdown/mousedown ne
+    // suffit pas à inhiber la sélection texte qui se construit pendant
+    // le glissement. On force user-select:none sur tout le document le
+    // temps du geste, puis on rétablit à pointerup/cancel.
+    try {
+      const de = document.documentElement;
+      if (de && !de.hasAttribute("data-ogc-prev-userselect")) {
+        de.setAttribute("data-ogc-prev-userselect", de.style.userSelect || "");
+        de.style.userSelect = "none";
+        de.style.webkitUserSelect = "none";
+        de.style.MozUserSelect = "none";
+      }
+    } catch {}
     try {
       // Vide toute sélection déjà présente sous le pointeur (sinon Firefox
       // l'étend au fur et à mesure que la souris bouge sur du texte).
@@ -190,6 +203,7 @@
     if (!active) { stopLongPressRepeat(); return; }
     active = false;
     clearTimers();
+    restoreUserSelect();
     const previewSeq = recognizer.sequence();
     if (settings.trails) window.OGC_Trails?.end();
     setTimeout(() => window.OGC_Tooltips?.hide(), 1500);
@@ -211,6 +225,19 @@
     if (suppressContext) { e.preventDefault(); suppressContext = false; }
   }
 
+  function restoreUserSelect() {
+    try {
+      const de = document.documentElement;
+      if (de && de.hasAttribute("data-ogc-prev-userselect")) {
+        const prev = de.getAttribute("data-ogc-prev-userselect") || "";
+        de.style.userSelect = prev;
+        de.style.webkitUserSelect = prev;
+        de.style.MozUserSelect = prev;
+        de.removeAttribute("data-ogc-prev-userselect");
+      }
+    } catch {}
+  }
+
   window.addEventListener("pointerdown", onDown, true);
   window.addEventListener("pointermove", onMove, true);
   window.addEventListener("pointerup", onUp, true);
@@ -221,7 +248,14 @@
   }, true);
   // Bloque l'extension de sélection initiée par mousedown sur du texte.
   window.addEventListener("selectstart", (e) => {
-    if (active && !initialEditable) { try { e.preventDefault(); } catch {} }
+    // En mode clic-gauche, selectstart peut être délivré avant que pointerdown
+    // n'ait positionné `active` (notamment sur Firefox macOS). On bloque donc
+    // dès qu'on est en mode clic-gauche, hors champs éditables.
+    if ((active || (settings.enabled && settings.button === 0))
+        && !initialEditable
+        && !e.target?.closest?.("input, textarea, [contenteditable=''], [contenteditable='true']")) {
+      try { e.preventDefault(); } catch {}
+    }
   }, true);
   // Sur clic-gauche, mousedown peut donner le focus + démarrer un drag avant
   // pointerdown : on l'intercepte aussi.
@@ -232,11 +266,12 @@
   }, true);
   window.addEventListener("pointercancel", () => {
     if (!active) { stopLongPressRepeat(); return; }
-    active = false; clearTimers(); stopLongPressRepeat();
+    active = false; clearTimers(); restoreUserSelect(); stopLongPressRepeat();
   }, true);
   window.addEventListener("blur", () => {
     active = false;
     clearTimers();
+    restoreUserSelect();
   });
   window.addEventListener("contextmenu", onContext, true);
 })();
