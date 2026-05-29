@@ -203,6 +203,7 @@
     if (!active) { stopLongPressRepeat(); return; }
     active = false;
     clearTimers();
+    restoreUserSelect();
     const previewSeq = recognizer.sequence();
     if (settings.trails) window.OGC_Trails?.end();
     setTimeout(() => window.OGC_Tooltips?.hide(), 1500);
@@ -224,6 +225,19 @@
     if (suppressContext) { e.preventDefault(); suppressContext = false; }
   }
 
+  function restoreUserSelect() {
+    try {
+      const de = document.documentElement;
+      if (de && de.hasAttribute("data-ogc-prev-userselect")) {
+        const prev = de.getAttribute("data-ogc-prev-userselect") || "";
+        de.style.userSelect = prev;
+        de.style.webkitUserSelect = prev;
+        de.style.MozUserSelect = prev;
+        de.removeAttribute("data-ogc-prev-userselect");
+      }
+    } catch {}
+  }
+
   window.addEventListener("pointerdown", onDown, true);
   window.addEventListener("pointermove", onMove, true);
   window.addEventListener("pointerup", onUp, true);
@@ -234,7 +248,14 @@
   }, true);
   // Bloque l'extension de sélection initiée par mousedown sur du texte.
   window.addEventListener("selectstart", (e) => {
-    if (active && !initialEditable) { try { e.preventDefault(); } catch {} }
+    // En mode clic-gauche, selectstart peut être délivré avant que pointerdown
+    // n'ait positionné `active` (notamment sur Firefox macOS). On bloque donc
+    // dès qu'on est en mode clic-gauche, hors champs éditables.
+    if ((active || (settings.enabled && settings.button === 0))
+        && !initialEditable
+        && !e.target?.closest?.("input, textarea, [contenteditable=''], [contenteditable='true']")) {
+      try { e.preventDefault(); } catch {}
+    }
   }, true);
   // Sur clic-gauche, mousedown peut donner le focus + démarrer un drag avant
   // pointerdown : on l'intercepte aussi.
@@ -245,11 +266,12 @@
   }, true);
   window.addEventListener("pointercancel", () => {
     if (!active) { stopLongPressRepeat(); return; }
-    active = false; clearTimers(); stopLongPressRepeat();
+    active = false; clearTimers(); restoreUserSelect(); stopLongPressRepeat();
   }, true);
   window.addEventListener("blur", () => {
     active = false;
     clearTimers();
+    restoreUserSelect();
   });
   window.addEventListener("contextmenu", onContext, true);
 })();
