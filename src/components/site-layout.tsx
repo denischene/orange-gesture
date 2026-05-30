@@ -1,4 +1,4 @@
-import { Link, Outlet } from "@tanstack/react-router";
+import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { DownloadButton } from "@/components/download-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -10,6 +10,11 @@ const NAV = [
 ] as const;
 
 export function SiteLayout() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isHome = pathname === "/";
+  const logoAlt = isHome
+    ? "Page d'accueil d'Orange Gesture Control"
+    : "Retour à la page d'accueil d'Orange Gesture Control";
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="border-b border-border bg-card/80 backdrop-blur sticky top-0 z-40">
@@ -17,7 +22,7 @@ export function SiteLayout() {
           <Link to="/" className="flex items-center gap-2 group">
             <img
               src="/img/logo.png"
-              alt="Orange Gesture Control"
+              alt={logoAlt}
               className="h-9 w-9 object-contain"
             />
             <span className="font-semibold tracking-tight text-lg">
