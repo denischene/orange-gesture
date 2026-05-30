@@ -180,39 +180,21 @@
 
   function onDown(e) {
     if (!settings.enabled || e.button !== settings.button) return;
-    // (1) En mode clic-gauche on bloque tout de suite la sélection / drag.
-    // (2) En mode clic-droit on ne suppose PAS encore qu'il y aura un
-    //     geste : on n'inhibe le menu contextuel qu'au premier déplacement
-    //     significatif (voir onMove). Exception : sur Firefox macOS le
-    //     contextmenu est délivré synchroniquement sur pointerdown, donc on
-    //     preventDefault le pointerdown pour le suspendre — si aucun
-    //     mouvement n'arrive, on rejouera un contextmenu synthétique sur
-    //     pointerup pour que le clic droit nu ouvre quand même le menu.
+    // Stratégie : ne RIEN bloquer tant qu'aucun geste n'est détecté, afin
+    // de préserver le comportement natif du clic (focus d'un champ, début
+    // de sélection texte, menu contextuel) tant que l'utilisateur ne
+    // commence pas à dessiner. On bascule en mode «capture de geste» (et
+    // on inhibe sélection / menu) seulement au premier déplacement
+    // significatif, dans onMove(). Seule exception : Firefox macOS livre
+    // le `contextmenu` de façon synchrone sur le pointerdown du clic
+    // droit ; on doit donc preventDefault dès maintenant pour le
+    // suspendre, quitte à le rejouer dans onUp si aucun geste ne suit.
     suppressContext = false;
     movedDuringPress = false;
     idleReleased = false;
-    if (e.button === 0 || IS_MAC) {
+    if (e.button === 2 && IS_MAC) {
       try { e.preventDefault(); } catch {}
     }
-    // Sur Firefox macOS, preventDefault sur pointerdown/mousedown ne
-    // suffit pas à inhiber la sélection texte qui se construit pendant
-    // le glissement. On force user-select:none sur tout le document le
-    // temps du geste, puis on rétablit à pointerup/cancel.
-    try {
-      const de = document.documentElement;
-      if (de && !de.hasAttribute("data-ogc-prev-userselect")) {
-        de.setAttribute("data-ogc-prev-userselect", de.style.userSelect || "");
-        de.style.userSelect = "none";
-        de.style.webkitUserSelect = "none";
-        de.style.MozUserSelect = "none";
-      }
-    } catch {}
-    try {
-      // Vide toute sélection déjà présente sous le pointeur (sinon Firefox
-      // l'étend au fur et à mesure que la souris bouge sur du texte).
-      const s = window.getSelection?.();
-      if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
-    } catch {}
     active = true;
     longPressFired = false;
     longPressActive = false;
@@ -248,19 +230,42 @@
       if (dx*dx + dy*dy >= MOVE_THRESHOLD_PX * MOVE_THRESHOLD_PX) {
         movedDuringPress = true;
         if (idleReleaseTimer) { clearTimeout(idleReleaseTimer); idleReleaseTimer = null; }
-        // Mouvement réel → on bloque l'éventuel menu contextuel qui
-        // arriverait sur pointerup (Windows / Linux), et on inhibe la
-        // sélection / le drag pour la suite du geste.
+        // Mouvement réel → on bascule en mode «capture de geste».
+        // - Inhibe le menu contextuel (pointerup sur Win/Linux, déjà
+        //   suspendu sur Mac).
+        // - Pose user-select:none pour que Firefox / WebKit n'étendent
+        //   pas une sélection texte pendant le tracé.
+        // - Vide toute sélection déjà commencée par le tout début du
+        //   drag natif (sauf dans un champ éditable).
         suppressContext = true;
+        try {
+          const de = document.documentElement;
+          if (de && !de.hasAttribute("data-ogc-prev-userselect")) {
+            de.setAttribute("data-ogc-prev-userselect", de.style.userSelect || "");
+            de.style.userSelect = "none";
+            de.style.webkitUserSelect = "none";
+            de.style.MozUserSelect = "none";
+          }
+        } catch {}
+        try {
+          const s = window.getSelection?.();
+          if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
+        } catch {}
       }
     }
-    // Sur clic-gauche, le navigateur tente d'étendre la sélection / de
-    // démarrer un drag pendant qu'on dessine. On annule les deux.
-    try { e.preventDefault(); } catch {}
-    try {
-      const s = window.getSelection?.();
-      if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
-    } catch {}
+    if (movedDuringPress) {
+      // Pendant le tracé : on annule l'extension native de la sélection
+      // et le drag d'images / liens.
+      try { e.preventDefault(); } catch {}
+      try {
+        const s = window.getSelection?.();
+        if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
+      } catch {}
+    } else {
+      // Pas (encore) de geste : on ne touche à rien — le navigateur peut
+      // démarrer une sélection texte ou placer le caret normalement.
+      return;
+    }
     points.push([e.clientX, e.clientY]);
     recognizer.addPoint(e.clientX, e.clientY);
     captureLinkAt(e.clientX, e.clientY, e.target);
@@ -343,24 +348,11 @@
   window.addEventListener("dragstart", (e) => {
     if (active) { try { e.preventDefault(); } catch {} }
   }, true);
-  // Bloque l'extension de sélection initiée par mousedown sur du texte.
-  window.addEventListener("selectstart", (e) => {
-    // En mode clic-gauche, selectstart peut être délivré avant que pointerdown
-    // n'ait positionné `active` (notamment sur Firefox macOS). On bloque donc
-    // dès qu'on est en mode clic-gauche, hors champs éditables.
-    if ((active || (settings.enabled && settings.button === 0))
-        && !initialEditable
-        && !e.target?.closest?.("input, textarea, [contenteditable=''], [contenteditable='true']")) {
-      try { e.preventDefault(); } catch {}
-    }
-  }, true);
-  // Sur clic-gauche, mousedown peut donner le focus + démarrer un drag avant
-  // pointerdown : on l'intercepte aussi.
-  window.addEventListener("mousedown", (e) => {
-    if (settings.enabled && e.button === settings.button && settings.button === 0) {
-      try { e.preventDefault(); } catch {}
-    }
-  }, true);
+  // N.B. : on n'écoute PAS `selectstart` ni `mousedown` de manière globale.
+  // Le clic gauche doit conserver son comportement natif (focus d'un
+  // champ, début de sélection) tant qu'aucun geste n'est détecté. Quand
+  // un déplacement significatif est détecté dans onMove(), on pose
+  // `user-select:none` sur <html> et on vide la sélection naissante.
   window.addEventListener("pointercancel", () => {
     if (!active) { stopLongPressRepeat(); return; }
     active = false; clearTimers(); restoreUserSelect(); stopLongPressRepeat();
