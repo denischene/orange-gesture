@@ -37,8 +37,10 @@ function showPreview(name, lbl) {
   preview.appendChild(label);
 }
 for (const it of ITEMS) {
-  const c = document.createElement("div");
+  const c = document.createElement("button");
+  c.type = "button";
   c.className = "cell";
+  c.setAttribute("aria-label", it.lbl);
   const img = document.createElement("img");
   img.src = "../img/" + it.img + ".png";
   img.alt = "";
