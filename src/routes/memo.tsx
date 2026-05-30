@@ -139,7 +139,11 @@ function NewTabIcon({ animated }: { animated: boolean }) {
 
 function GestureCard({ g }: { g: Gesture }) {
   return (
-    <figure className="ogc-card group rounded-xl border border-border bg-card p-4 flex flex-col items-center text-center hover:shadow-md transition">
+    <figure
+      tabIndex={0}
+      aria-label={g.alt || g.title}
+      className="ogc-card group rounded-xl border border-border bg-card p-4 flex flex-col items-center text-center hover:shadow-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
       <div className="relative h-28 w-28 text-foreground">
         {g.custom === "home" ? (
           <>
