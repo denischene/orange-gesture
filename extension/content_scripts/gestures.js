@@ -23,6 +23,11 @@
   const MOVE_THRESHOLD_PX = 5;
   let idleReleaseTimer = null;
   let idleReleased = false;
+  // Après libération par timer en clic-gauche sur Chromium, on pilote
+  // nous-mêmes la sélection texte car le moteur natif a été inhibé au
+  // mousedown initial et ne se rallume pas tout seul.
+  let manualSelect = false;
+  let manualSelectAnchor = null; // { node, offset }
   const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent || "");
   // Visible to the background: true tant que l'utilisateur maintient le
   // pointeur appuyé après le déclenchement initial du long-press.
@@ -173,9 +178,44 @@
           } catch {}
         }
       }
-      // En clic-gauche, restaurer user-select suffit : tout déplacement
-      // ultérieur produira une sélection texte native.
+      // En clic-gauche, on amorce une sélection manuelle pilotée via
+      // l'API Selection : sur Chromium, le moteur natif a été désactivé
+      // par le preventDefault('selectstart') initial et il ne se
+      // rallume pas tant que le bouton n'est pas relâché.
+      if (button === 0) {
+        manualSelect = true;
+        manualSelectAnchor = caretAt(downX, downY);
+        if (manualSelectAnchor) {
+          try {
+            const sel = window.getSelection?.();
+            if (sel) {
+              sel.removeAllRanges();
+              const r = document.createRange();
+              r.setStart(manualSelectAnchor.node, manualSelectAnchor.offset);
+              r.setEnd(manualSelectAnchor.node, manualSelectAnchor.offset);
+              sel.addRange(r);
+            }
+          } catch {}
+        }
+      }
     }, IDLE_RELEASE_MS);
+  }
+
+  // Renvoie {node, offset} du caret texte le plus proche de (x,y),
+  // compatible Firefox (caretPositionFromPoint) et Chromium/WebKit
+  // (caretRangeFromPoint).
+  function caretAt(x, y) {
+    try {
+      if (document.caretPositionFromPoint) {
+        const p = document.caretPositionFromPoint(x, y);
+        if (p) return { node: p.offsetNode, offset: p.offset };
+      }
+      if (document.caretRangeFromPoint) {
+        const r = document.caretRangeFromPoint(x, y);
+        if (r) return { node: r.startContainer, offset: r.startOffset };
+      }
+    } catch {}
+    return null;
   }
 
   function onDown(e) {
@@ -219,7 +259,23 @@
   }
 
   function onMove(e) {
-    if (!active) return;
+    if (!active) {
+      if (manualSelect && manualSelectAnchor) {
+        const focus = caretAt(e.clientX, e.clientY);
+        if (focus) {
+          try {
+            const sel = window.getSelection?.();
+            if (sel) {
+              sel.setBaseAndExtent(
+                manualSelectAnchor.node, manualSelectAnchor.offset,
+                focus.node, focus.offset
+              );
+            }
+          } catch {}
+        }
+      }
+      return;
+    }
     if (idleReleaseTimer && !movedDuringPress) {
       // Tant qu'il n'y a pas eu de déplacement significatif, on garde
       // la fenêtre d'inactivité ouverte.
@@ -278,6 +334,10 @@
   }
 
   function onUp(e) {
+    if (manualSelect) {
+      manualSelect = false;
+      manualSelectAnchor = null;
+    }
     if (idleReleased) {
       idleReleased = false;
       stopLongPressRepeat();
