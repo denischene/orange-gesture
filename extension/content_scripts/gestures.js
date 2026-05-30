@@ -348,11 +348,20 @@
   window.addEventListener("dragstart", (e) => {
     if (active) { try { e.preventDefault(); } catch {} }
   }, true);
-  // N.B. : on n'écoute PAS `selectstart` ni `mousedown` de manière globale.
-  // Le clic gauche doit conserver son comportement natif (focus d'un
-  // champ, début de sélection) tant qu'aucun geste n'est détecté. Quand
-  // un déplacement significatif est détecté dans onMove(), on pose
-  // `user-select:none` sur <html> et on vide la sélection naissante.
+  // Sur Chromium (Chrome, Edge, Opera, Brave) le `user-select:none` posé
+  // dans onMove() arrive TROP TARD : la sélection a déjà commencé sur le
+  // mousedown et le moteur ne l'annule plus. On bloque donc `selectstart`
+  // tant que `active === true` (le bouton est encore appuyé en mode
+  // capture). Cas non impactés :
+  //   • Clic simple sans déplacement pour placer le caret dans un champ :
+  //     `selectstart` n'est pas émis dans ce cas.
+  //   • Sélection après temporisation de 1,5 s : `scheduleIdleRelease()`
+  //     remet `active = false`, donc le `selectstart` suivant passe.
+  window.addEventListener("selectstart", (e) => {
+    if (active && !idleReleased) {
+      try { e.preventDefault(); } catch {}
+    }
+  }, true);
   window.addEventListener("pointercancel", () => {
     if (!active) { stopLongPressRepeat(); return; }
     active = false; clearTimers(); restoreUserSelect(); stopLongPressRepeat();

@@ -30,8 +30,12 @@
       .cell { display: flex; flex-direction: column; align-items: center;
               padding: 6px 4px; border: 1px solid var(--border);
               border-radius: 6px; background: var(--bg); cursor: pointer;
-              transition: background .12s, border-color .12s; }
+              transition: background .12s, border-color .12s;
+              font: inherit; color: inherit; text-align: center;
+              -webkit-appearance: none; appearance: none; }
       .cell:hover { background: #fff3e5; border-color: var(--orange); }
+      .cell:focus-visible { outline: 2px solid var(--orange);
+                             outline-offset: 2px; }
       .cell.active { background: #ffe6cc; border-color: var(--orange); }
       .cell img { width: 40px; height: 40px; object-fit: contain; }
       .cell .lbl { font-size: 10px; margin-top: 3px; text-align: center;

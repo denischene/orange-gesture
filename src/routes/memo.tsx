@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState, useRef } from "react";
 
 export const Route = createFileRoute("/memo")({
   component: Memo,
@@ -138,28 +139,49 @@ function NewTabIcon({ animated }: { animated: boolean }) {
 }
 
 function GestureCard({ g }: { g: Gesture }) {
+  // `playKey` est incrémenté quand l'utilisateur active la vignette au
+  // clavier (Entrée / Espace) — il sert de cache-buster sur l'URL du GIF
+  // pour forcer le navigateur à relancer l'animation depuis son premier
+  // frame. `kbActive` force l'affichage de la variante animée tant que
+  // la vignette est focus (équivalent clavier du :hover).
+  const [playKey, setPlayKey] = useState(0);
+  const [kbActive, setKbActive] = useState(false);
+  const figRef = useRef<HTMLElement>(null);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setKbActive(true);
+      setPlayKey((k) => k + 1);
+    }
+  };
+
+  const activeCls = kbActive ? "ogc-card-active" : "";
   return (
     <figure
+      ref={figRef as React.RefObject<HTMLDivElement>}
       tabIndex={0}
       aria-label={g.alt || g.title}
-      className="ogc-card group rounded-xl border border-border bg-card p-4 flex flex-col items-center text-center hover:shadow-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      onKeyDown={handleKeyDown}
+      onBlur={() => setKbActive(false)}
+      className={`ogc-card group ${activeCls} rounded-xl border border-border bg-card p-4 flex flex-col items-center text-center hover:shadow-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
     >
       <div className="relative h-28 w-28 text-foreground">
         {g.custom === "home" ? (
           <>
-            <span className="absolute inset-0 group-hover:opacity-0 transition-opacity">
+            <span className="absolute inset-0 group-hover:opacity-0 group-[.ogc-card-active]:opacity-0 transition-opacity">
               <HomeIcon animated={false} />
             </span>
-            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 group-[.ogc-card-active]:opacity-100 transition-opacity">
               <HomeIcon animated />
             </span>
           </>
         ) : g.custom === "newtab" ? (
           <>
-            <span className="absolute inset-0 group-hover:opacity-0 transition-opacity">
+            <span className="absolute inset-0 group-hover:opacity-0 group-[.ogc-card-active]:opacity-0 transition-opacity">
               <NewTabIcon animated={false} />
             </span>
-            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 group-[.ogc-card-active]:opacity-100 transition-opacity">
               <NewTabIcon animated />
             </span>
           </>
@@ -168,14 +190,14 @@ function GestureCard({ g }: { g: Gesture }) {
             <img
               src={`/img/${g.name}.png`}
               alt={g.alt || g.title}
-              className="ogc-gesture-img absolute inset-0 h-28 w-28 object-contain group-hover:opacity-0 transition-opacity"
+              className="ogc-gesture-img absolute inset-0 h-28 w-28 object-contain group-hover:opacity-0 group-[.ogc-card-active]:opacity-0 transition-opacity"
               loading="lazy"
             />
             <img
-              src={`/img/${g.name}.gif`}
+              src={`/img/${g.name}.gif${playKey ? `?t=${playKey}` : ""}`}
               alt=""
               aria-hidden
-              className="ogc-gesture-img absolute inset-0 h-28 w-28 object-contain opacity-0 group-hover:opacity-100 transition-opacity"
+              className="ogc-gesture-img absolute inset-0 h-28 w-28 object-contain opacity-0 group-hover:opacity-100 group-[.ogc-card-active]:opacity-100 transition-opacity"
               loading="lazy"
               onError={(e) => { (e.currentTarget as HTMLImageElement).src = `/img/${g.name}.png`; }}
             />
