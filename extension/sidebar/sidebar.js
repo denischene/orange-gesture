@@ -58,3 +58,12 @@ for (const it of ITEMS) {
   });
   grid.appendChild(c);
 }
+// Place le focus sur la première cellule (Aide) à l'ouverture du panneau.
+const firstCell = grid.querySelector(".cell");
+if (firstCell) {
+  // requestAnimationFrame pour s'assurer que l'iframe est bien rendue
+  // avant de tenter le focus (sinon Firefox l'ignore parfois).
+  requestAnimationFrame(() => {
+    try { firstCell.focus(); } catch {}
+  });
+}
