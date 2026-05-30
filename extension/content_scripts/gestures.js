@@ -1,6 +1,11 @@
 /* Gesture capture — long press fires while still holding the button. */
 (function () {
   const LONG_PRESS_MS = 480;
+  // Délai d'inactivité après l'appui : si l'utilisateur n'a pas commencé
+  // de geste après ce délai, on annule le mode «capture de geste» pour
+  // laisser le navigateur faire son travail standard (menu contextuel en
+  // clic-droit, sélection texte en clic-gauche).
+  const IDLE_RELEASE_MS = 1500;
 
   const recognizer = new OGC_Recognizer();
   const points = [];
@@ -16,6 +21,8 @@
   let downY = 0;
   let movedDuringPress = false;
   const MOVE_THRESHOLD_PX = 5;
+  let idleReleaseTimer = null;
+  let idleReleased = false;
   const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent || "");
   // Visible to the background: true tant que l'utilisateur maintient le
   // pointeur appuyé après le déclenchement initial du long-press.
@@ -117,6 +124,7 @@
 
   function clearTimers() {
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    if (idleReleaseTimer) { clearTimeout(idleReleaseTimer); idleReleaseTimer = null; }
   }
 
   function scheduleLongPress() {
@@ -138,6 +146,38 @@
     }, LONG_PRESS_MS);
   }
 
+  function scheduleIdleRelease(button) {
+    if (idleReleaseTimer) clearTimeout(idleReleaseTimer);
+    idleReleaseTimer = setTimeout(() => {
+      if (!active || movedDuringPress) return;
+      // L'utilisateur a marqué un temps d'arrêt sans déclencher de geste :
+      // on sort du mode capture pour rendre la main au navigateur.
+      idleReleased = true;
+      active = false;
+      clearTimers();
+      restoreUserSelect();
+      if (settings.trails) window.OGC_Trails?.end();
+      window.OGC_Tooltips?.hide();
+      if (button === 2) {
+        // Clic-droit maintenu sans geste : on autorise / on rejoue le
+        // menu contextuel.
+        suppressContext = false;
+        if (IS_MAC) {
+          try {
+            const evt = new MouseEvent("contextmenu", {
+              bubbles: true, cancelable: true, view: window,
+              clientX: downX, clientY: downY,
+              button: 2, buttons: 0,
+            });
+            (downTarget || document.documentElement).dispatchEvent(evt);
+          } catch {}
+        }
+      }
+      // En clic-gauche, restaurer user-select suffit : tout déplacement
+      // ultérieur produira une sélection texte native.
+    }, IDLE_RELEASE_MS);
+  }
+
   function onDown(e) {
     if (!settings.enabled || e.button !== settings.button) return;
     // (1) En mode clic-gauche on bloque tout de suite la sélection / drag.
@@ -150,6 +190,7 @@
     //     pointerup pour que le clic droit nu ouvre quand même le menu.
     suppressContext = false;
     movedDuringPress = false;
+    idleReleased = false;
     if (e.button === 0 || IS_MAC) {
       try { e.preventDefault(); } catch {}
     }
@@ -192,15 +233,21 @@
     lastMoveAt = performance.now();
     if (settings.trails) window.OGC_Trails?.start(e.clientX, e.clientY);
     window.OGC_Tooltips?.show("");
+    scheduleIdleRelease(e.button);
   }
 
   function onMove(e) {
     if (!active) return;
+    if (idleReleaseTimer && !movedDuringPress) {
+      // Tant qu'il n'y a pas eu de déplacement significatif, on garde
+      // la fenêtre d'inactivité ouverte.
+    }
     if (!movedDuringPress) {
       const dx = e.clientX - downX;
       const dy = e.clientY - downY;
       if (dx*dx + dy*dy >= MOVE_THRESHOLD_PX * MOVE_THRESHOLD_PX) {
         movedDuringPress = true;
+        if (idleReleaseTimer) { clearTimeout(idleReleaseTimer); idleReleaseTimer = null; }
         // Mouvement réel → on bloque l'éventuel menu contextuel qui
         // arriverait sur pointerup (Windows / Linux), et on inhibe la
         // sélection / le drag pour la suite du geste.
@@ -226,6 +273,11 @@
   }
 
   function onUp(e) {
+    if (idleReleased) {
+      idleReleased = false;
+      stopLongPressRepeat();
+      return;
+    }
     if (!active) { stopLongPressRepeat(); return; }
     active = false;
     clearTimers();
