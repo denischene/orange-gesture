@@ -4,8 +4,9 @@
   // Délai d'inactivité après l'appui : si l'utilisateur n'a pas commencé
   // de geste après ce délai, on annule le mode «capture de geste» pour
   // laisser le navigateur faire son travail standard (menu contextuel en
-  // clic-droit, sélection texte en clic-gauche).
-  const IDLE_RELEASE_MS = 1500;
+  // clic-droit, sélection texte en clic-gauche). Configurable via
+  // settings.clickDelay (ms) : 500 / 1500 / 2000.
+  const DEFAULT_IDLE_RELEASE_MS = 1500;
 
   const recognizer = new OGC_Recognizer();
   const points = [];
@@ -39,7 +40,7 @@
   // que «Copier» et «Rechercher avec présélection» fonctionnent.
   let initialSelection = "";
   let initialEditable = false;
-  let settings = { enabled: true, button: 2, trails: true, tooltips: true };
+  let settings = { enabled: true, button: 2, trails: true, tooltips: true, clickDelay: DEFAULT_IDLE_RELEASE_MS };
 
   browser.storage.local.get("settings").then((s) => {
     if (s.settings) settings = { ...settings, ...s.settings };
@@ -153,6 +154,7 @@
 
   function scheduleIdleRelease(button) {
     if (idleReleaseTimer) clearTimeout(idleReleaseTimer);
+    const delay = Number(settings.clickDelay) > 0 ? Number(settings.clickDelay) : DEFAULT_IDLE_RELEASE_MS;
     idleReleaseTimer = setTimeout(() => {
       if (!active || movedDuringPress) return;
       // L'utilisateur a marqué un temps d'arrêt sans déclencher de geste :
@@ -184,21 +186,26 @@
       // rallume pas tant que le bouton n'est pas relâché.
       if (button === 0) {
         manualSelect = true;
+        // L'ancre sera calculée au point courant si non disponible ici
+        // (cas où le pointeur initial n'est pas sur un nœud texte) — sur
+        // Edge en particulier, le moteur natif refuse de redémarrer une
+        // sélection tant que le bouton n'est pas relâché : on la pilote
+        // donc systématiquement nous-mêmes via l'API Selection.
         manualSelectAnchor = caretAt(downX, downY);
-        if (manualSelectAnchor) {
-          try {
-            const sel = window.getSelection?.();
-            if (sel) {
-              sel.removeAllRanges();
+        try {
+          const sel = window.getSelection?.();
+          if (sel) {
+            sel.removeAllRanges();
+            if (manualSelectAnchor) {
               const r = document.createRange();
               r.setStart(manualSelectAnchor.node, manualSelectAnchor.offset);
               r.setEnd(manualSelectAnchor.node, manualSelectAnchor.offset);
               sel.addRange(r);
             }
-          } catch {}
-        }
+          }
+        } catch {}
       }
-    }, IDLE_RELEASE_MS);
+    }, delay);
   }
 
   // Renvoie {node, offset} du caret texte le plus proche de (x,y),
@@ -260,9 +267,15 @@
 
   function onMove(e) {
     if (!active) {
-      if (manualSelect && manualSelectAnchor) {
+      if (manualSelect) {
+        // Sur Chromium/Edge, le drag natif est bloqué par notre
+        // selectstart preventDefault initial. On empêche aussi tout
+        // comportement natif parasite (image drag, autoscroll) pendant
+        // qu'on étend la sélection à la main.
+        try { e.preventDefault(); } catch {}
         const focus = caretAt(e.clientX, e.clientY);
         if (focus) {
+          if (!manualSelectAnchor) manualSelectAnchor = focus;
           try {
             const sel = window.getSelection?.();
             if (sel) {

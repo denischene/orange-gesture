@@ -10,7 +10,8 @@ const DEFAULTS = {
   tooltips: true,
   sensitivity: 24,
   repeatEnabled: true,
-  voice: false
+  voice: false,
+  clickDelay: 1500
 };
 
 const form = document.getElementById("ogc-options");
@@ -60,6 +61,9 @@ async function loadSettings() {
   for (const el of form.querySelectorAll('input[name="voice"]')) {
     el.checked = (el.value === "on") === !!s.voice;
   }
+  for (const el of form.querySelectorAll('input[name="clickDelay"]')) {
+    el.checked = Number(el.value) === Number(s.clickDelay);
+  }
 }
 
 form.addEventListener("submit", (e) => e.preventDefault());
@@ -72,7 +76,8 @@ async function persistSettings() {
     button: Number(new FormData(form).get("button")),
     trails: new FormData(form).get("trails") === "on",
     repeatEnabled: new FormData(form).get("repeatEnabled") === "on",
-    voice: new FormData(form).get("voice") === "on"
+    voice: new FormData(form).get("voice") === "on",
+    clickDelay: Number(new FormData(form).get("clickDelay")) || 1500
   };
   await browser.storage.local.set({ settings: next });
   saveStatus.textContent = "Préférences enregistrées.";
