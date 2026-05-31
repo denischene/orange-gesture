@@ -42,7 +42,17 @@
               <label><input type="radio" name="button" value="1" /><span>Milieu</span></label>
               <label><input type="radio" name="button" value="2" /><span>Droit</span></label>
             </div>
-            <p class="ogc-hint">Par défaut le bouton droit est actif.</p>
+          <p class="ogc-hint">Pour faire le geste, cliquez et laissez appuyé un des boutons en traçant le geste.</p>
+          </fieldset>
+
+          <fieldset class="ogc-field">
+            <legend>Action du clic avant le geste</legend>
+            <div class="ogc-segmented" role="radiogroup">
+              <label><input type="radio" name="clickDelay" value="500" /><span>Court</span></label>
+              <label><input type="radio" name="clickDelay" value="1500" /><span>Moyen</span></label>
+              <label><input type="radio" name="clickDelay" value="2000" /><span>Long</span></label>
+            </div>
+            <p class="ogc-hint">Pour exécuter l’action du clic à la place du geste, cliquer et ne pas bouger pendant un délai.</p>
           </fieldset>
 
           <fieldset class="ogc-field">
@@ -51,7 +61,7 @@
               <label><input type="radio" name="trails" value="on" /><span>Afficher</span></label>
               <label><input type="radio" name="trails" value="off" /><span>Masquer</span></label>
             </div>
-            <p class="ogc-hint">Par défaut la trace est affichée.</p>
+            <p class="ogc-hint">Pour visualiser la forme du geste que vous tracez.</p>
           </fieldset>
 
           <fieldset class="ogc-field">
@@ -60,7 +70,7 @@
               <label><input type="radio" name="repeatEnabled" value="on" /><span>Activables</span></label>
               <label><input type="radio" name="repeatEnabled" value="off" /><span>Bloqués</span></label>
             </div>
-            <p class="ogc-hint">Par défaut les répétitions en appui long sont activées.</p>
+            <p class="ogc-hint">Pour déclencher la seconde fonction du geste (ceux qui ont un point orange), garder le bouton enfoncé à la fin du geste.</p>
           </fieldset>
 
           <fieldset class="ogc-field">
@@ -69,11 +79,7 @@
               <label><input type="radio" name="voice" value="on" /><span>Avec vocalisation</span></label>
               <label><input type="radio" name="voice" value="off" /><span>Sans vocalisation</span></label>
             </div>
-            <p class="ogc-hint">
-              Lorsque la vocalisation est activée, le nom de la commande reconnue
-              (par exemple « Monter » ou « Monter (répété) ») est prononcé à voix
-              haute via la synthèse vocale du navigateur. Désactivée par défaut.
-            </p>
+            <p class="ogc-hint">Pour vocaliser le nom de la commande reconnue.</p>
           </fieldset>
 
           <div class="ogc-actions">
