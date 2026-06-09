@@ -9,7 +9,7 @@ export const Route = createFileRoute("/memo")({
       {
         name: "description",
         content:
-          "Vocabulaire des 19 gestes reconnus par Orange Gesture Control, avec illustration animée et fonction d'appui long.",
+          "Vocabulaire des 22 gestes reconnus par Orange Gesture Control, avec illustration animée et fonction d'appui long.",
       },
     ],
   }),
