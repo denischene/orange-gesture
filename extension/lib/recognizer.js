@@ -27,7 +27,9 @@
       if (this.tokens[this.tokens.length - 1] !== dir) this.tokens.push(dir);
       this.last = [x, y];
     }
-    sequence() { return this.tokens.join(""); }
+    // Sépare explicitement les tokens par `-` pour distinguer
+    // « U » suivi de « R » (angle droit, "U-R") d'un « UR » diagonal.
+    sequence() { return this.tokens.join("-"); }
   }
   root.OGC_Recognizer = Recognizer;
 })(typeof window !== "undefined" ? window : globalThis);
