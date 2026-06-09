@@ -18,6 +18,23 @@ const SRC = resolve(ROOT, "extension/data/gestures.json");
 
 const vocab = JSON.parse(readFileSync(SRC, "utf8"));
 
+// Tokenise une séquence brute (ex. "UUR", "DRUR") en tokens directionnels
+// puis joint par "-" pour différencier sans ambiguïté « U-R » (angle droit)
+// d'un « UR » (diagonale). Le recognizer émet directement ce format dashé.
+function dashify(seq) {
+  const out = [];
+  let i = 0;
+  while (i < seq.length) {
+    const two = seq.substr(i, 2);
+    if (two === "UR" || two === "UL" || two === "DR" || two === "DL") {
+      out.push(two); i += 2;
+    } else {
+      out.push(seq[i]); i += 1;
+    }
+  }
+  return out.join("-");
+}
+
 /* ---------- public JSON ---------- */
 const pubJson = resolve(ROOT, "public/ogc-gestures.json");
 mkdirSync(dirname(pubJson), { recursive: true });
@@ -64,8 +81,8 @@ const actionIndex = new Map(actions.map((a, i) => [a, i]));
 const entries = [];
 for (const g of vocab.gestures) {
   const id = actionIndex.get(g.id);
-  entries.push({ seq: g.canonical, action: id });
-  for (const a of g.aliases || []) entries.push({ seq: a, action: id });
+  entries.push({ seq: dashify(g.canonical), action: id });
+  for (const a of g.aliases || []) entries.push({ seq: dashify(a), action: id });
 }
 entries.sort((a, b) =>
   b.seq.length - a.seq.length || (a.seq < b.seq ? -1 : a.seq > b.seq ? 1 : 0)
@@ -106,9 +123,9 @@ console.log(
 /* ---------- extension/lib/vocabulary.js (legacy global, for content script) ---------- */
 const vocabPairs = [];
 for (const g of vocab.gestures) {
-  vocabPairs.push(`    ${JSON.stringify(g.canonical)}: ${JSON.stringify(g.id)}`);
+  vocabPairs.push(`    ${JSON.stringify(dashify(g.canonical))}: ${JSON.stringify(g.id)}`);
   for (const a of g.aliases || []) {
-    vocabPairs.push(`    ${JSON.stringify(a)}: ${JSON.stringify(g.id)}`);
+    vocabPairs.push(`    ${JSON.stringify(dashify(a))}: ${JSON.stringify(g.id)}`);
   }
 }
 const vocabJs = [
