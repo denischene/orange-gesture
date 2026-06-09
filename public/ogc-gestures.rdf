@@ -113,8 +113,7 @@
     <ogc:label xml:lang="fr">Onglet précédent</ogc:label>
     <ogc:longLabel xml:lang="fr">Onglet précédent (répété)</ogc:longLabel>
     <ogc:repeat>true</ogc:repeat>
-    <ogc:sequence>DDLLULU</ogc:sequence>
-    <ogc:alias>UULLDLD</ogc:alias>
+    <ogc:sequence>UULLDLD</ogc:sequence>
     <ogc:alias>UULDLD</ogc:alias>
     <ogc:alias>UULLDL</ogc:alias>
     <ogc:alias>UULLDLL</ogc:alias>

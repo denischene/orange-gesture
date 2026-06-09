@@ -41,6 +41,11 @@
   // que «Copier» et «Rechercher avec présélection» fonctionnent.
   let initialSelection = "";
   let initialEditable = false;
+  // Élément focusé AU MOMENT du pointerdown : capturé avant que le clic
+  // du geste ne déplace le focus vers <body>. Utilisé par les actions
+  // « Élément suivant / précédent / Valider » pour reprendre au bon
+  // endroit (y compris en répétition longue).
+  let savedActiveElement = null;
   let settings = { enabled: true, button: 2, trails: true, tooltips: true, clickDelay: DEFAULT_IDLE_RELEASE_MS };
 
   browser.storage.local.get("settings").then((s) => {
@@ -73,7 +78,70 @@
       sendResponse({ ok: true });
       return true;
     }
+    if (msg?.type === "ogc.focusAction") {
+      try { handleFocusAction(msg.kind); } catch (e) { console.warn("[OGC] focusAction failed", e); }
+      sendResponse({ ok: true });
+      return true;
+    }
   });
+
+  function focusableElements() {
+    const sel = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),audio[controls],video[controls],[contenteditable=""],[contenteditable="true"],iframe,summary';
+    const all = Array.from(document.querySelectorAll(sel));
+    const visible = all.filter((el) => {
+      if (el.disabled) return false;
+      if (el.getAttribute("aria-hidden") === "true") return false;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return false;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === "hidden" || cs.display === "none") return false;
+      return true;
+    });
+    visible.sort((a, b) => {
+      const ta = parseInt(a.getAttribute("tabindex") || "0", 10);
+      const tb = parseInt(b.getAttribute("tabindex") || "0", 10);
+      if (ta > 0 && tb > 0 && ta !== tb) return ta - tb;
+      if (ta > 0 && tb <= 0) return -1;
+      if (tb > 0 && ta <= 0) return 1;
+      const cmp = a.compareDocumentPosition(b);
+      if (cmp & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+      if (cmp & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+      return 0;
+    });
+    return visible;
+  }
+
+  function handleFocusAction(kind) {
+    if (kind === "activate") {
+      const el = (savedActiveElement && savedActiveElement.isConnected) ? savedActiveElement
+               : (document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
+      if (!el) return;
+      const opts = { key: "Enter", code: "Enter", keyCode: 13, which: 13, bubbles: true, cancelable: true };
+      try { el.dispatchEvent(new KeyboardEvent("keydown", opts)); } catch {}
+      try { el.dispatchEvent(new KeyboardEvent("keypress", opts)); } catch {}
+      try { el.dispatchEvent(new KeyboardEvent("keyup", opts)); } catch {}
+      try { if (typeof el.click === "function") el.click(); } catch {}
+      return;
+    }
+    const visible = focusableElements();
+    if (visible.length === 0) return;
+    const dir = kind === "prev" ? -1 : +1;
+    // Référence : élément focusé MÉMORISÉ au pointerdown, ou résultat de
+    // notre précédent déplacement (qui s'auto-synchronise via setter).
+    let ref = (savedActiveElement && savedActiveElement.isConnected) ? savedActiveElement : null;
+    if (!ref && document.activeElement && document.activeElement !== document.body) {
+      ref = document.activeElement;
+    }
+    let idx = ref ? visible.indexOf(ref) : -1;
+    if (idx === -1) idx = dir > 0 ? -1 : visible.length;
+    const n = visible.length;
+    const next = visible[((idx + dir) % n + n) % n];
+    try { next.focus({ preventScroll: false }); } catch { try { next.focus(); } catch {} }
+    try { next.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); } catch {}
+    // Mémorise pour la répétition (le geste est encore en cours, l'appui
+    // long va re-déclencher cette action sans nouveau pointerdown).
+    savedActiveElement = next;
+  }
 
   function stopLongPressRepeat() {
     const shouldNotify = longPressActive || longPressFired;
@@ -255,6 +323,14 @@
     initialEditable = !!e.target?.closest?.(
       "input, textarea, [contenteditable=''], [contenteditable='true']"
     );
+    // Mémorise le focus AVANT que le clic du geste ne le déplace vers
+    // <body>. On garde le précédent si l'élément actif est déjà <body>.
+    try {
+      const ae = document.activeElement;
+      if (ae && ae !== document.body && ae !== document.documentElement) {
+        savedActiveElement = ae;
+      }
+    } catch {}
     recognizer.reset();
     points.length = 0;
     points.push([e.clientX, e.clientY]);

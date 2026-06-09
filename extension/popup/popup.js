@@ -10,13 +10,23 @@ cb.addEventListener("change", async () => {
 document.getElementById("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());
 const sb = document.getElementById("open-sidebar");
 if (sb) sb.addEventListener("click", async () => {
-  // Firefox : sidebarAction.open(). Chromium : sidePanel.open({windowId}).
+  // Firefox : sidebarAction.open() préserve l'activation utilisateur.
+  // Chromium (Chrome, Edge, Opera, Brave) : aucun moyen fiable d'ouvrir
+  // un sidePanel depuis ici ; on délègue au background pour qu'il
+  // utilise EXACTEMENT le même chemin que le geste « point d'interrogation »
+  // (sidePanel.open avec windowId/tabId si dispo, sinon panneau injecté
+  // dans la page via iframe).
   try {
     if (browser.sidebarAction?.open) { await browser.sidebarAction.open(); return; }
-    const sp = globalThis.chrome?.sidePanel || browser.sidePanel;
-    if (sp?.open) {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-      await sp.open({ windowId: tab.windowId, tabId: tab.id });
-    }
-  } catch (e) { console.warn("[OGC] open sidebar/sidePanel failed", e); }
+    await browser.runtime.sendMessage({ type: "ogc.runAction", action: "help.toggle" });
+    window.close();
+  } catch (e) { console.warn("[OGC] open sidebar failed", e); }
+});
+
+const wb = document.getElementById("open-website");
+if (wb) wb.addEventListener("click", async () => {
+  try {
+    await browser.tabs.create({ url: "https://orange-gesture.lovable.app" });
+    window.close();
+  } catch (e) { console.warn("[OGC] open website failed", e); }
 });

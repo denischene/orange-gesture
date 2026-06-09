@@ -134,9 +134,8 @@ globalThis.OGC_GESTURES_DATA = {
       "label": "Onglet précédent",
       "longLabel": "Onglet précédent (répété)",
       "repeat": true,
-      "canonical": "DDLLULU",
+      "canonical": "UULLDLD",
       "aliases": [
-        "UULLDLD",
         "UULDLD",
         "UULLDL",
         "UULLDLL"
