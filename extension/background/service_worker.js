@@ -41,6 +41,22 @@ function browserHomeUrl() {
 // JS fallback (when WASM fails) and the fuzzy matcher share one table.
 const OGC_VOCABULARY = {};
 const ENTRY_BY_ACTION = {};
+// Tokenise une séquence brute (canonical/alias dans gestures.json) en
+// tokens directionnels puis joint par "-" pour matcher le format dashé
+// émis par le recognizer JS (lib/recognizer.js).
+function dashifySeq(seq) {
+  const out = [];
+  let i = 0;
+  while (i < seq.length) {
+    const two = seq.substr(i, 2);
+    if (two === "UR" || two === "UL" || two === "DR" || two === "DL") {
+      out.push(two); i += 2;
+    } else {
+      out.push(seq[i]); i += 1;
+    }
+  }
+  return out.join("-");
+}
 for (const g of GESTURES.gestures) {
   const entry = {
     action: g.id,
@@ -49,9 +65,10 @@ for (const g of GESTURES.gestures) {
     ...(g.repeat ? { repeat: true } : {})
   };
   ENTRY_BY_ACTION[g.id] = entry;
-  OGC_VOCABULARY[g.canonical] = entry;
+  OGC_VOCABULARY[dashifySeq(g.canonical)] = entry;
   for (const a of g.aliases || []) {
-    if (!OGC_VOCABULARY[a]) OGC_VOCABULARY[a] = entry;
+    const k = dashifySeq(a);
+    if (!OGC_VOCABULARY[k]) OGC_VOCABULARY[k] = entry;
   }
 }
 
@@ -133,6 +150,10 @@ if (IS_FIREFOX) {
 // Tokenize a sequence string into an array of direction tokens
 // (UR/UL/DR/DL are 2-char tokens; U/D/L/R are 1-char).
 function tokenize(seq) {
+  // Le recognizer JS produit désormais des séquences dashées
+  // (« U-R », « D-R-U-R »…). On accepte aussi les anciennes formes
+  // compactes par sécurité.
+  if (seq.indexOf("-") >= 0) return seq.split("-").filter(Boolean);
   const out = [];
   let i = 0;
   while (i < seq.length) {
@@ -184,6 +205,11 @@ function findVocab(seq) {
   let bestCost = Infinity;
   let bestKeyLen = 0;
   for (const { key, tokens } of VOCAB_TOKENS) {
+    // Pas de matching flou pour les clés très courtes (UR/DL = 1 token,
+    // L/R/U/D = 1 token) : elles doivent être saisies exactement pour
+    // éviter qu'un geste long (ex. U-U-R = « haut de page ») soit
+    // confondu avec une diagonale unique (UR = « agrandir »).
+    if (tokens.length <= 2 || inputTokens.length <= 2) continue;
     const lenDiff = Math.abs(tokens.length - inputTokens.length);
     if (lenDiff > Math.max(2, Math.ceil(tokens.length * 0.4))) continue;
     const d = dirDistance(inputTokens, tokens);
