@@ -366,65 +366,24 @@ const ACTIONS = {
    * suivant ou précédent dans le DOM de l'onglet actif (équivalent Tab
    * ou Shift+Tab). Réalisé via injection — l'extension ne peut pas
    * envoyer une vraie touche Tab système. */
-  "element.next":   async (tab) => moveFocus(tab, +1),
-  "element.prev":   async (tab) => moveFocus(tab, -1),
-  /* Valider : équivalent Entrée — clique l'élément focusé et dispatche
-   * un évènement clavier Enter. */
-  "element.activate": async (tab) => browser.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: () => {
-      const el = document.activeElement;
-      if (!el || el === document.body) return;
-      try {
-        const opts = { key: "Enter", code: "Enter", keyCode: 13, which: 13, bubbles: true, cancelable: true };
-        el.dispatchEvent(new KeyboardEvent("keydown", opts));
-        el.dispatchEvent(new KeyboardEvent("keypress", opts));
-        el.dispatchEvent(new KeyboardEvent("keyup", opts));
-        if (typeof el.click === "function") el.click();
-      } catch {}
-    }
-  }).catch(() => {})
+  "element.next":   async (tab) => focusInTab(tab, "next"),
+  "element.prev":   async (tab) => focusInTab(tab, "prev"),
+  /* Valider : équivalent Entrée — délégué au content script qui connaît
+   * l'élément focusé AVANT que le clic-geste ne déplace ce focus vers
+   * <body>. */
+  "element.activate": async (tab) => focusInTab(tab, "activate")
 };
 
-async function moveFocus(tab, delta) {
-  return browser.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: (dir) => {
-      const sel = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),audio[controls],video[controls],[contenteditable=""],[contenteditable="true"],iframe,summary';
-      const all = Array.from(document.querySelectorAll(sel));
-      const visible = all.filter((el) => {
-        if (el.disabled) return false;
-        if (el.getAttribute("aria-hidden") === "true") return false;
-        const r = el.getBoundingClientRect();
-        if (r.width === 0 && r.height === 0) return false;
-        const cs = getComputedStyle(el);
-        if (cs.visibility === "hidden" || cs.display === "none") return false;
-        return true;
-      });
-      visible.sort((a, b) => {
-        const ta = parseInt(a.getAttribute("tabindex") || "0", 10);
-        const tb = parseInt(b.getAttribute("tabindex") || "0", 10);
-        if (ta > 0 && tb > 0 && ta !== tb) return ta - tb;
-        if (ta > 0 && tb <= 0) return -1;
-        if (tb > 0 && ta <= 0) return 1;
-        // DOM order
-        const cmp = a.compareDocumentPosition(b);
-        if (cmp & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
-        if (cmp & Node.DOCUMENT_POSITION_PRECEDING) return 1;
-        return 0;
-      });
-      if (visible.length === 0) return;
-      const cur = document.activeElement;
-      let idx = visible.indexOf(cur);
-      if (idx === -1) idx = dir > 0 ? -1 : visible.length;
-      const n = visible.length;
-      const next = visible[((idx + dir) % n + n) % n];
-      try { next.focus({ preventScroll: false }); } catch { try { next.focus(); } catch {} }
-      try { next.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); } catch {}
-    },
-    args: [delta]
-  }).catch(() => {});
+// Délègue la manipulation du focus au content script de l'onglet : il a
+// mémorisé l'élément actif AU moment du pointerdown (avant que le clic du
+// geste ne déplace ce focus vers <body>), et peut donc reprendre la
+// progression Tab/Shift+Tab au bon endroit, y compris en répétition.
+async function focusInTab(tab, kind) {
+  try {
+    await browser.tabs.sendMessage(tab.id, { type: "ogc.focusAction", kind });
+  } catch (e) { /* onglet sans content script */ }
 }
+
 
 async function cycleTab(tab, delta) {
   const tabs = await browser.tabs.query({ currentWindow: true });
@@ -635,6 +594,16 @@ function scheduleRepeat(entry, handler, originTab, ctx, token) {
 
 browser.runtime.onMessage.addListener(async (msg, sender) => {
   const tab = sender.tab;
+  if (msg?.type === "ogc.runAction" && typeof msg.action === "string") {
+    // Invoqué depuis la popup pour rejouer une action sans geste.
+    try {
+      const [active] = await browser.tabs.query({ active: true, currentWindow: true });
+      if (!active) return;
+      const handler = ACTIONS[msg.action];
+      if (handler) await handler(active, {});
+    } catch (e) { console.warn("[OGC] runAction failed", e); }
+    return;
+  }
   if (!tab) return;
   if (msg?.type === "ogc.repeatStop") { stopRepeat(); return; }
   if (msg?.type !== "ogc.stroke" || !Array.isArray(msg.points)) return;
