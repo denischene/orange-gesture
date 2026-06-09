@@ -89,7 +89,12 @@ async function refreshCustom() {
   const next = {};
   for (const [actionId, seq] of Object.entries(customGestures || {})) {
     const entry = ENTRY_BY_ACTION[actionId];
-    if (entry && typeof seq === "string" && seq.length > 0) next[seq] = entry;
+    if (entry && typeof seq === "string" && seq.length > 0) {
+      // Les gestes personnalisés sont stockés au format compact
+      // (sans tirets) ; on les dashifie pour matcher les séquences
+      // émises par le recognizer JS.
+      next[seq.indexOf("-") >= 0 ? seq : dashifySeq(seq)] = entry;
+    }
   }
   CUSTOM_VOCAB = next;
 }
