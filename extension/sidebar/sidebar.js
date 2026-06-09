@@ -3,8 +3,8 @@ const ITEMS = [
   { img: "interogation",           lbl: "aide" },
   { img: "top_bottom",             lbl: "descendre" },
   { img: "bottom_top",             lbl: "monter" },
-  { img: "left_right_bottom",      lbl: "bas page" },
-  { img: "left_right_top",         lbl: "haut page" },
+  { img: "down_right_angle",       lbl: "bas page" },
+  { img: "up_right_angle",         lbl: "haut page" },
   { img: "right_left",             lbl: "page prcdte" },
   { img: "left_right",             lbl: "page suiv." },
   { img: "accueil",                lbl: "accueil" },
@@ -18,7 +18,10 @@ const ITEMS = [
   { img: "alpha",                  lbl: "fermer" },
   { img: "magnifying_glass",       lbl: "rechercher" },
   { img: "left_right_heart",       lbl: "+favoris" },
-  { img: "vertical_ribbon",        lbl: "enregistrer" }
+  { img: "vertical_ribbon",        lbl: "enregistrer" },
+  { img: "element_next",           lbl: "élt suiv." },
+  { img: "element_prev",           lbl: "élt prcdt." },
+  { img: "validate",               lbl: "valider" }
 ];
 const grid = document.getElementById("grid");
 const preview = document.getElementById("preview");

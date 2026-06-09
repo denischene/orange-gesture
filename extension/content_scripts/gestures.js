@@ -30,6 +30,7 @@
   let manualSelect = false;
   let manualSelectAnchor = null; // { node, offset }
   const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent || "");
+  const IS_FIREFOX = typeof navigator !== "undefined" && /Firefox/i.test(navigator.userAgent || "");
   // Visible to the background: true tant que l'utilisateur maintient le
   // pointeur appuyé après le déclenchement initial du long-press.
   let longPressActive = false;
@@ -387,12 +388,45 @@
       suppressContext = true;
       e.preventDefault();
       if (longPressFired) return;
+      // Firefox-only : la séquence du geste « Copier » (= scroll.up avec
+      // sélection non vide) se termine par un pointerup qui efface la
+      // sélection côté Gecko. On capture les ranges actifs avant l'envoi
+      // du message et on les ré-applique après que l'action a eu le
+      // temps de copier dans le presse-papier.
+      let savedRanges = null;
+      if (IS_FIREFOX) {
+        try {
+          const sel = window.getSelection?.();
+          if (sel && sel.rangeCount && (sel.toString() || "").length > 0) {
+            savedRanges = [];
+            for (let i = 0; i < sel.rangeCount; i++) {
+              savedRanges.push(sel.getRangeAt(i).cloneRange());
+            }
+          }
+        } catch {}
+      }
       browser.runtime.sendMessage({
         type: "ogc.stroke",
         points: points.slice(),
         actionHint: window.OGC_VOCABULARY?.[previewSeq] || null,
         context: { ...buildContext(), longPress: false }
       });
+      if (savedRanges) {
+        const restore = () => {
+          try {
+            const sel = window.getSelection?.();
+            if (!sel) return;
+            sel.removeAllRanges();
+            for (const r of savedRanges) sel.addRange(r);
+          } catch {}
+        };
+        // Plusieurs tentatives échelonnées : Firefox efface la sélection
+        // à différents moments selon que l'action passe par
+        // navigator.clipboard ou document.execCommand("copy").
+        requestAnimationFrame(restore);
+        setTimeout(restore, 60);
+        setTimeout(restore, 200);
+      }
     }
   }
 

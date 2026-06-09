@@ -27,8 +27,8 @@ const GESTURE_IMG = {
   "page.forward":    "left_right",
   "scroll.up":       "bottom_top",
   "scroll.down":     "top_bottom",
-  "page.top":        "left_right_top",
-  "page.bottom":     "left_right_bottom",
+  "page.top":        "up_right_angle",
+  "page.bottom":     "down_right_angle",
   "site.home":       "accueil",
   "search.web":      "magnifying_glass",
   "help.toggle":     "interogation",
@@ -41,7 +41,10 @@ const GESTURE_IMG = {
   "zoom.in":         "clockwise_circle",
   "zoom.out":        "anticlockwise_circle",
   "bookmarks.add":   "left_right_heart",
-  "page.saveAs":     "vertical_ribbon"
+  "page.saveAs":     "vertical_ribbon",
+  "element.next":    "element_next",
+  "element.prev":    "element_prev",
+  "element.activate":"validate"
 };
 
 /* ---------- réglages ---------- */

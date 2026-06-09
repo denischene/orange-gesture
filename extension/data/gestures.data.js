@@ -49,15 +49,41 @@ globalThis.OGC_GESTURES_DATA = {
     {
       "id": "page.top",
       "label": "Haut de page",
-      "canonical": "RU",
-      "aliases": []
+      "canonical": "UUR",
+      "aliases": [
+        "URR",
+        "UURR",
+        "UUUR",
+        "URRR",
+        "UUURR",
+        "UURRR",
+        "UUL",
+        "ULL",
+        "UULL",
+        "UUUL",
+        "ULLL",
+        "UUULL",
+        "UULLL"
+      ]
     },
     {
       "id": "page.bottom",
       "label": "Bas de page",
-      "canonical": "RD",
+      "canonical": "DDR",
       "aliases": [
-        "RDRD"
+        "DRR",
+        "DDRR",
+        "DDDR",
+        "DRRR",
+        "DDDRR",
+        "DDRRR",
+        "DDL",
+        "DLL",
+        "DDLL",
+        "DDDL",
+        "DLLL",
+        "DDDLL",
+        "DDLLL"
       ]
     },
     {
@@ -183,6 +209,49 @@ globalThis.OGC_GESTURES_DATA = {
         "DDRRURULLL",
         "DDRRURULL",
         "DDRRURUUUL"
+      ]
+    },
+    {
+      "id": "element.next",
+      "label": "Élément suivant",
+      "longLabel": "Élément suivant (répété)",
+      "repeat": true,
+      "canonical": "RD",
+      "aliases": [
+        "RDD",
+        "RRD",
+        "RRDD"
+      ]
+    },
+    {
+      "id": "element.prev",
+      "label": "Élément précédent",
+      "longLabel": "Élément précédent (répété)",
+      "repeat": true,
+      "canonical": "LD",
+      "aliases": [
+        "LDD",
+        "LLD",
+        "LLDD",
+        "LU",
+        "LUU",
+        "LLU",
+        "LLUU"
+      ]
+    },
+    {
+      "id": "element.activate",
+      "label": "Valider",
+      "canonical": "DRUR",
+      "aliases": [
+        "DDRUR",
+        "DRRUR",
+        "DRURR",
+        "DRUUR",
+        "DDRUUR",
+        "DRRUUR",
+        "DDRRUR",
+        "DDRRUUR"
       ]
     }
   ]

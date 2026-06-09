@@ -9,7 +9,7 @@ export const Route = createFileRoute("/memo")({
       {
         name: "description",
         content:
-          "Vocabulaire des 19 gestes reconnus par Orange Gesture Control, avec illustration animée et fonction d'appui long.",
+          "Vocabulaire des 22 gestes reconnus par Orange Gesture Control, avec illustration animée et fonction d'appui long.",
       },
     ],
   }),
@@ -35,8 +35,8 @@ const GESTURES: Gesture[] = [
   { name: "interogation",          title: "Aide",                          sequence: "UURRDDLDD",                                              dot: "none", alt: "Aide = geste point d’interrogation" },
   { name: "top_bottom",            title: "Descendre",                     longTitle: "Descendre (répété)",           sequence: "D",            dot: "bottom", note: "Dans un champ : Coller", alt: "Descendre dans la page = geste trait vers le bas. Depuis un champ de saisi, exécute à la place la fonction coller" },
   { name: "bottom_top",            title: "Monter",                        longTitle: "Monter (répété)",              sequence: "U",            dot: "top",    note: "Sur sélection : Copier", alt: "Monter dans la page = geste trait vers le haut. Depuis une sélection textuelle, exécute à la place la fonction copier" },
-  { name: "left_right_bottom",     title: "Bas de page",                   sequence: "RD",                                                     dot: "none", alt: "Aller en bas de page = trait horizontal puis vers le bas" },
-  { name: "left_right_top",        title: "Haut de page",                  sequence: "RU",                                                     dot: "none", alt: "Aller en haut de page = trait horizontal puis vers le haut" },
+  { name: "down_right_angle",      title: "Bas de page",                   sequence: "DDR",                                                    dot: "none", alt: "Aller en bas de page = trait vertical descendant puis trait horizontal (angle droit)" },
+  { name: "up_right_angle",        title: "Haut de page",                  sequence: "UUR",                                                    dot: "none", alt: "Aller en haut de page = trait vertical montant puis trait horizontal (angle droit)" },
   { name: "right_left",            title: "Page précédente",               longTitle: "Page précédente répétée",      sequence: "L",            dot: "left", alt: "Aller à la page précédente = trait horizontal vers la gauche, un appui long fait remonter de plusieurs pages" },
   { name: "left_right",            title: "Page suivante",                 longTitle: "Page suivante répétée",        sequence: "R",            dot: "right", alt: "Aller à la page suivante = trait horizontal vers la droite, un appui long fait avancer de plusieurs pages" },
   { name: "right_left_triangle",   title: "Page d'accueil du site",        longTitle: "Page d'accueil du navigateur", sequence: "LURDR",        dot: "bottom-right", alt: "Aller à la page d’accueil du site web = trait horizontal vers la gauche puis diagonale pour faire un retour en forme de triangle, un appui long fait un retour à la page d’accueil du navigateur" },
@@ -51,6 +51,9 @@ const GESTURES: Gesture[] = [
   { name: "magnifying_glass",      title: "Rechercher sur internet",       longTitle: "Rechercher dans la page",      sequence: "URUURRDLDDL",  dot: "bottom-left", alt: "Rechercher sur internet = geste en forme de loupe, une diagonale haut-droite suivie d’un cercle en sens horaire, si sélection préalable, la recherche se fait sur cette sélection, si appui long en fin de geste la recherche s’effectue intrapage" },
   { name: "left_right_heart",      title: "Ajouter aux favoris",           sequence: "LRULRD",                                                 dot: "right", alt: "Ajouter aux favoris = un trait vers la droite interrompu par un pic, qui revient sur la ligne et reprend vers la droite" },
   { name: "vertical_ribbon",       title: "Enregistrer sous…",             sequence: "DDRURUULL",                                              dot: "none", alt: "Enregistrer sous = un geste en forme d’hameçon qui descend verticalement et en fin de geste forme une boucle droite sur sa hampe" },
+  { name: "element_next",          title: "Élément suivant",               longTitle: "Élément suivant répété",       sequence: "RD",           dot: "bottom-right", alt: "Aller à l’élément focusable suivant = trait horizontal puis vers le bas, un appui long répète" },
+  { name: "element_prev",          title: "Élément précédent",             longTitle: "Élément précédent répété",     sequence: "LD",           dot: "bottom-left",  alt: "Aller à l’élément focusable précédent = trait horizontal vers la gauche puis vers le bas, un appui long répète" },
+  { name: "validate",              title: "Valider",                       sequence: "DRUR",                                                   dot: "none", alt: "Valider l’élément focusé (équivalent Entrée) = geste en forme de V" },
 ];
 
 const DOT_POS: Record<Exclude<DotPos, "none">, React.CSSProperties> = {

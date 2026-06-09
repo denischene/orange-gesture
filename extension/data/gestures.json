@@ -1,7 +1,16 @@
 {
   "version": "2.0.0",
   "description": "Orange Gesture Control — vocabulaire des gestes (source unique de vérité). Tout dérivé : runtime JS, en-tête C++ embarqué dans le WASM, exports publics JSON et RDF.",
-  "directions": ["R", "UR", "U", "UL", "L", "DL", "D", "DR"],
+  "directions": [
+    "R",
+    "UR",
+    "U",
+    "UL",
+    "L",
+    "DL",
+    "D",
+    "DR"
+  ],
   "gestures": [
     {
       "id": "page.back",
@@ -38,14 +47,42 @@
     {
       "id": "page.top",
       "label": "Haut de page",
-      "canonical": "RU",
-      "aliases": []
+      "canonical": "UUR",
+      "aliases": [
+        "URR",
+        "UURR",
+        "UUUR",
+        "URRR",
+        "UUURR",
+        "UURRR",
+        "UUL",
+        "ULL",
+        "UULL",
+        "UUUL",
+        "ULLL",
+        "UUULL",
+        "UULLL"
+      ]
     },
     {
       "id": "page.bottom",
       "label": "Bas de page",
-      "canonical": "RD",
-      "aliases": ["RDRD"]
+      "canonical": "DDR",
+      "aliases": [
+        "DRR",
+        "DDRR",
+        "DDDR",
+        "DRRR",
+        "DDDRR",
+        "DDRRR",
+        "DDL",
+        "DLL",
+        "DDLL",
+        "DDDL",
+        "DLLL",
+        "DDDLL",
+        "DDLLL"
+      ]
     },
     {
       "id": "site.home",
@@ -71,7 +108,11 @@
       "id": "tab.new",
       "label": "Nouvel onglet",
       "canonical": "DUURRDRD",
-      "aliases": ["DUURRDR", "DUURDRD", "DUURRDRR"]
+      "aliases": [
+        "DUURRDR",
+        "DUURDRD",
+        "DUURRDRR"
+      ]
     },
     {
       "id": "tab.next",
@@ -79,7 +120,12 @@
       "longLabel": "Onglet suivant (répété)",
       "repeat": true,
       "canonical": "URRDRD",
-      "aliases": ["UURRDR", "UURRDRD", "UURDRD", "UURRDRR"]
+      "aliases": [
+        "UURRDR",
+        "UURRDRD",
+        "UURDRD",
+        "UURRDRR"
+      ]
     },
     {
       "id": "tab.prev",
@@ -87,7 +133,12 @@
       "longLabel": "Onglet précédent (répété)",
       "repeat": true,
       "canonical": "DDLLULU",
-      "aliases": ["UULLDLD", "UULDLD", "UULLDL", "UULLDLL"]
+      "aliases": [
+        "UULLDLD",
+        "UULDLD",
+        "UULLDL",
+        "UULLDLL"
+      ]
     },
     {
       "id": "tab.close",
@@ -95,7 +146,12 @@
       "longLabel": "Fermer l'onglet (répété)",
       "repeat": true,
       "canonical": "DRULDR",
-      "aliases": ["DLULLUURRDR", "DLLULLUURDR", "DLLULLUURRDR", "DDLLULLUURRDR"]
+      "aliases": [
+        "DLULLUURRDR",
+        "DLLULLUURDR",
+        "DLLULLUURRDR",
+        "DDLLULLUURRDR"
+      ]
     },
     {
       "id": "window.maximize",
@@ -133,13 +189,68 @@
       "id": "bookmarks.add",
       "label": "Ajouter aux favoris",
       "canonical": "LRULRD",
-      "aliases": ["RURRDR", "RURDDR", "RURDLDR", "RURDR", "RURDDRR", "RURUDDRR", "URUDDRR"]
+      "aliases": [
+        "RURRDR",
+        "RURDDR",
+        "RURDLDR",
+        "RURDR",
+        "RURDDRR",
+        "RURUDDRR",
+        "URUDDRR"
+      ]
     },
     {
       "id": "page.saveAs",
       "label": "Enregistrer sous…",
       "canonical": "DDRURUULL",
-      "aliases": ["DDRRURULLL", "DDRRURULL", "DDRRURUUUL"]
+      "aliases": [
+        "DDRRURULLL",
+        "DDRRURULL",
+        "DDRRURUUUL"
+      ]
+    },
+    {
+      "id": "element.next",
+      "label": "Élément suivant",
+      "longLabel": "Élément suivant (répété)",
+      "repeat": true,
+      "canonical": "RD",
+      "aliases": [
+        "RDD",
+        "RRD",
+        "RRDD"
+      ]
+    },
+    {
+      "id": "element.prev",
+      "label": "Élément précédent",
+      "longLabel": "Élément précédent (répété)",
+      "repeat": true,
+      "canonical": "LD",
+      "aliases": [
+        "LDD",
+        "LLD",
+        "LLDD",
+        "LU",
+        "LUU",
+        "LLU",
+        "LLUU"
+      ]
+    },
+    {
+      "id": "element.activate",
+      "label": "Valider",
+      "canonical": "DRUR",
+      "aliases": [
+        "DDRUR",
+        "DRRUR",
+        "DRURR",
+        "DRUUR",
+        "DDRUUR",
+        "DRRUUR",
+        "DDRRUR",
+        "DDRRUUR"
+      ]
     }
   ]
 }
