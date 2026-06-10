@@ -118,6 +118,17 @@ browser.runtime.onInstalled.addListener(async () => {
 browser.runtime.onStartup?.addListener(() => preload());
 preload();
 
+// Sur Firefox Android, le popup n'est pas affiché : un tap sur l'icône
+// déclenche `action.onClicked` que l'on redirige vers la page d'options
+// (Préférences) dans un nouvel onglet.
+browser.action?.onClicked?.addListener(async () => {
+  if (!IS_ANDROID) return; // sur desktop, le popup s'affiche normalement
+  try {
+    const url = browser.runtime.getURL("options/options.html");
+    await browser.tabs.create({ url });
+  } catch (e) { console.warn("[OGC] open options failed", e); }
+});
+
 /* ---------- détection du lecteur PDF intégré de Firefox ----------
  * Sur Firefox, le visualiseur PDF interne (pdf.js) s'exécute dans un
  * contexte privilégié où les extensions ne peuvent injecter aucun content
