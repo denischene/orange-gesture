@@ -29,6 +29,11 @@ const { recognizeAction, preload } = globalThis.OGC_WASM || {
 // Détection navigateur — utilisée pour les URLs «accueil navigateur»
 // (chaque famille de navigateurs a sa propre page d'accueil interne).
 const IS_FIREFOX = !!browser.runtime?.getBrowserInfo;
+// Détection Android (Fenix) : `browser.runtime.getPlatformInfo` est async
+// mais l'`os` est figé pour la durée de vie de l'event-page. On le cache
+// au plus tôt pour gates synchrones.
+let IS_ANDROID = false;
+browser.runtime.getPlatformInfo?.().then((p) => { IS_ANDROID = p?.os === "android"; }).catch(() => {});
 function browserHomeUrl() {
   if (IS_FIREFOX) return "about:home";
   // Chromium (Chrome, Edge, Opera, Brave) : la page d'accueil interne
@@ -112,6 +117,17 @@ browser.runtime.onInstalled.addListener(async () => {
 });
 browser.runtime.onStartup?.addListener(() => preload());
 preload();
+
+// Sur Firefox Android, le popup n'est pas affiché : un tap sur l'icône
+// déclenche `action.onClicked` que l'on redirige vers la page d'options
+// (Préférences) dans un nouvel onglet.
+browser.action?.onClicked?.addListener(async () => {
+  if (!IS_ANDROID) return; // sur desktop, le popup s'affiche normalement
+  try {
+    const url = browser.runtime.getURL("options/options.html");
+    await browser.tabs.create({ url });
+  } catch (e) { console.warn("[OGC] open options failed", e); }
+});
 
 /* ---------- détection du lecteur PDF intégré de Firefox ----------
  * Sur Firefox, le visualiseur PDF interne (pdf.js) s'exécute dans un
@@ -531,6 +547,22 @@ async function zoomBy(tab, delta) {
 
 const WIN_STATES = ["minimized", "normal", "maximized", "fullscreen"];
 async function cycleWindowState(delta) {
+  // Android (Fenix) n'a pas l'API browser.windows : on signale poliment
+  // que la fonction n'est pas applicable et on arrête toute répétition.
+  if (IS_ANDROID || !browser.windows) {
+    try {
+      const [active] = await browser.tabs.query({ active: true, currentWindow: true });
+      if (active) {
+        browser.tabs.sendMessage(active.id, {
+          type: "ogc.feedback",
+          label: "Indisponible sur Android",
+          long: false,
+          voice: !!SETTINGS.voice
+        }).catch(() => {});
+      }
+    } catch {}
+    return false;
+  }
   const win = await browser.windows.getCurrent();
   const i = WIN_STATES.indexOf(win.state);
   // Clamp aux extrémités : on s'arrête à `minimized` ou `fullscreen`.

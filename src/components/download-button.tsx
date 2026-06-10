@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BrowserIcon } from "@/components/browser-icon";
 
 type Browser = {
-  key: "firefox" | "chrome" | "edge" | "opera" | "brave";
+  key: "firefox" | "firefox-android" | "chrome" | "edge" | "opera" | "brave";
   label: string;
   href: string;
   hint: string;
@@ -10,6 +10,7 @@ type Browser = {
 
 const BROWSERS: Browser[] = [
   { key: "firefox", label: "Firefox", href: "/ogc.xpi", hint: "Fichier .xpi" },
+  { key: "firefox-android", label: "Firefox Android (beta)", href: "/ogc-android.xpi", hint: "Fichier .xpi — Nightly recommandé" },
   { key: "chrome", label: "Chrome", href: "/ogc-chrome.zip", hint: "Archive .zip (mode développeur)" },
   { key: "edge", label: "Edge", href: "/ogc-edge.zip", hint: "Archive .zip (mode développeur)" },
   { key: "opera", label: "Opera", href: "/ogc-opera.zip", hint: "Archive .zip (mode développeur)" },

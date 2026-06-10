@@ -1,7 +1,8 @@
-type Name = "firefox" | "chrome" | "edge" | "opera" | "brave";
+type Name = "firefox" | "firefox-android" | "chrome" | "edge" | "opera" | "brave";
 
 const COLORS: Record<Name, { bg: string; fg: string }> = {
   firefox: { bg: "#FF7139", fg: "#fff" },
+  "firefox-android": { bg: "#FF7139", fg: "#fff" },
   chrome: { bg: "#4285F4", fg: "#fff" },
   edge: { bg: "#0078D7", fg: "#fff" },
   opera: { bg: "#FF1B2D", fg: "#fff" },
@@ -10,6 +11,7 @@ const COLORS: Record<Name, { bg: string; fg: string }> = {
 
 const LETTER: Record<Name, string> = {
   firefox: "F",
+  "firefox-android": "F",
   chrome: "C",
   edge: "E",
   opera: "O",

@@ -31,6 +31,7 @@
   let manualSelectAnchor = null; // { node, offset }
   const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent || "");
   const IS_FIREFOX = typeof navigator !== "undefined" && /Firefox/i.test(navigator.userAgent || "");
+  const IS_ANDROID = !!(globalThis.OGC && globalThis.OGC.isAndroid);
   // Visible to the background: true tant que l'utilisateur maintient le
   // pointeur appuyé après le déclenchement initial du long-press.
   let longPressActive = false;
@@ -50,9 +51,13 @@
 
   browser.storage.local.get("settings").then((s) => {
     if (s.settings) settings = { ...settings, ...s.settings };
+    // Sur Android, le bouton « droit » n'existe pas : on capte le doigt
+    // (button === 0) quel que soit le réglage stocké.
+    if (IS_ANDROID) settings.button = 0;
   });
   browser.storage.onChanged.addListener((changes) => {
     if (changes.settings) settings = { ...settings, ...changes.settings.newValue };
+    if (IS_ANDROID) settings.button = 0;
   });
 
   // Le background interroge périodiquement l'onglet actif pour savoir si
@@ -295,7 +300,24 @@
   }
 
   function onDown(e) {
-    if (!settings.enabled || e.button !== settings.button) return;
+    if (!settings.enabled) return;
+    // Android (tactile) : on accepte uniquement les pointeurs « touch »
+    // (button === 0). Desktop : on respecte le réglage utilisateur.
+    if (IS_ANDROID) {
+      if (e.pointerType !== "touch") return;
+    } else if (e.button !== settings.button) {
+      return;
+    }
+    // Empêche le scroll natif et le pinch pendant qu'un geste est actif.
+    if (IS_ANDROID) {
+      try {
+        const de = document.documentElement;
+        if (de && !de.hasAttribute("data-ogc-prev-touchaction")) {
+          de.setAttribute("data-ogc-prev-touchaction", de.style.touchAction || "");
+          de.style.touchAction = "none";
+        }
+      } catch {}
+    }
     // Stratégie : ne RIEN bloquer tant qu'aucun geste n'est détecté, afin
     // de préserver le comportement natif du clic (focus d'un champ, début
     // de sélection texte, menu contextuel) tant que l'utilisateur ne
@@ -519,6 +541,11 @@
         de.style.webkitUserSelect = prev;
         de.style.MozUserSelect = prev;
         de.removeAttribute("data-ogc-prev-userselect");
+      }
+      if (de && de.hasAttribute("data-ogc-prev-touchaction")) {
+        const prev = de.getAttribute("data-ogc-prev-touchaction") || "";
+        de.style.touchAction = prev;
+        de.removeAttribute("data-ogc-prev-touchaction");
       }
     } catch {}
   }

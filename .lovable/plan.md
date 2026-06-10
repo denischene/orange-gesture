@@ -1,3 +1,21 @@
+## Statut : implémenté (build initial Android)
+
+Livré :
+- Détection plateforme dans `extension/lib/compat.js` (`OGC.isAndroid` / `OGC.isFenix`).
+- `extension/manifest.android.json` (sans `sidebar_action`, `contextMenus`, `commands` ; `gecko_android.strict_min_version = 120`).
+- `extension/content_scripts/gestures.js` : accepte les pointeurs `touch` sur Android (button=0 forcé), pose `touch-action: none` pendant le geste, restauration au pointerup.
+- `extension/background/service_worker.js` : détection async `runtime.getPlatformInfo()`, listener `action.onClicked` qui ouvre `options.html` (popup indisponible sur Fenix), `window.maximize/minimize` désactivés avec notification.
+- `extension/options/options.css` : `@media (max-width: 600px)` pour layout empilé.
+- `scripts/package-android.mjs` : génère `public/ogc-android.xpi`.
+- `src/components/download-button.tsx` + `browser-icon.tsx` : variante Firefox Android.
+- `src/routes/tutorials.tsx` : section Firefox Android (Nightly + collection AMO personnalisée).
+
+Reste hors-scope :
+- Signature AMO (manuelle, hors sandbox) pour activer le `.xpi` sur Firefox Android stable.
+- Tests réels sur appareil Android.
+
+---
+
 ## Objectif
 
 Faire fonctionner Orange Gesture Control sur **Firefox pour Android** (Fenix), en complément des versions desktop déjà packagées (`ogc.xpi`).
