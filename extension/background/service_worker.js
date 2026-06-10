@@ -29,6 +29,11 @@ const { recognizeAction, preload } = globalThis.OGC_WASM || {
 // Détection navigateur — utilisée pour les URLs «accueil navigateur»
 // (chaque famille de navigateurs a sa propre page d'accueil interne).
 const IS_FIREFOX = !!browser.runtime?.getBrowserInfo;
+// Détection Android (Fenix) : `browser.runtime.getPlatformInfo` est async
+// mais l'`os` est figé pour la durée de vie de l'event-page. On le cache
+// au plus tôt pour gates synchrones.
+let IS_ANDROID = false;
+browser.runtime.getPlatformInfo?.().then((p) => { IS_ANDROID = p?.os === "android"; }).catch(() => {});
 function browserHomeUrl() {
   if (IS_FIREFOX) return "about:home";
   // Chromium (Chrome, Edge, Opera, Brave) : la page d'accueil interne
