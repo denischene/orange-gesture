@@ -30,7 +30,7 @@ const FEATURES = [
     body: "Compatible Firefox 115+. Storage WebExtension, content scripts isolés, plus de XPCOM ni d'overlay XUL.",
   },
   {
-    title: "19 gestes prêts à l'emploi",
+    title: "22 gestes prêts à l'emploi",
     body: "Onglets, historique, favoris, zoom, navigation… Le mémo détaillé est disponible dans le menu.",
   },
 ];
@@ -69,7 +69,7 @@ function Index() {
                   to="/memo"
                   className="inline-flex items-center px-5 py-3 rounded-md border border-border bg-card hover:bg-accent transition"
                 >
-                  Voir les 19 gestes
+                  Voir les 22 gestes
                 </Link>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
