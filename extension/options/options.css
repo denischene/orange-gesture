@@ -179,3 +179,22 @@ body { font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 .ogc-spacer { flex: 1; }
 .ogc-custom-tools { margin-top: 18px; padding-top: 14px; border-top: 1px solid #e5e7eb; }
 .ogc-custom-tools .ogc-actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+
+/* ----- Responsive (Firefox Android / écrans étroits) ----- */
+@media (max-width: 600px) {
+  .ogc-hero { padding: 18px 12px 0; }
+  .ogc-hero-inner { padding: 0; }
+  .ogc-brand-row { gap: 12px; margin-bottom: 14px; }
+  .ogc-logo { width: 48px; height: 48px; }
+  .ogc-brand-title { font-size: 24px; flex-wrap: wrap; gap: 6px; }
+  .ogc-brand-sub { font-size: 14px; }
+  .ogc-tabs { gap: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ogc-tab { font-size: 14px; padding: 10px 2px; white-space: nowrap; }
+  /* Tous les conteneurs multi-colonnes passent en pile verticale. */
+  .ogc-grid, .ogc-cols, .ogc-row, .ogc-two-cols,
+  .ogc-card-grid, .ogc-prefs-grid {
+    display: block !important;
+  }
+  .ogc-card { margin-bottom: 12px; }
+  #ogc-wizard-canvas { height: 220px; }
+}
