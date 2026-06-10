@@ -536,6 +536,22 @@ async function zoomBy(tab, delta) {
 
 const WIN_STATES = ["minimized", "normal", "maximized", "fullscreen"];
 async function cycleWindowState(delta) {
+  // Android (Fenix) n'a pas l'API browser.windows : on signale poliment
+  // que la fonction n'est pas applicable et on arrête toute répétition.
+  if (IS_ANDROID || !browser.windows) {
+    try {
+      const [active] = await browser.tabs.query({ active: true, currentWindow: true });
+      if (active) {
+        browser.tabs.sendMessage(active.id, {
+          type: "ogc.feedback",
+          label: "Indisponible sur Android",
+          long: false,
+          voice: !!SETTINGS.voice
+        }).catch(() => {});
+      }
+    } catch {}
+    return false;
+  }
   const win = await browser.windows.getCurrent();
   const i = WIN_STATES.indexOf(win.state);
   // Clamp aux extrémités : on s'arrête à `minimized` ou `fullscreen`.
