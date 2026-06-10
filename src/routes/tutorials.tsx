@@ -84,7 +84,7 @@ const STEPS = [
         <Link to="/memo" className="text-primary underline">
           mémo des gestes
         </Link>{" "}
-        pour découvrir les 19 gestes disponibles et leurs 35 commandes.
+        pour découvrir les 22 gestes disponibles et leurs 37 commandes.
       </>
     ),
   },
