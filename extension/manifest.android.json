@@ -1,0 +1,96 @@
+{
+  "manifest_version": 3,
+  "name": "Orange Gesture Control",
+  "short_name": "OGC",
+  "version": "2.0.17",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ogc@orange-ftgroup.com",
+      "strict_min_version": "120.0"
+    },
+    "gecko_android": {
+      "strict_min_version": "120.0"
+    }
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting",
+    "sessions",
+    "history",
+    "bookmarks",
+    "notifications",
+    "clipboardRead",
+    "clipboardWrite",
+    "downloads"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": [
+      "lib/compat.js",
+      "lib/storage.js",
+      "data/gestures.data.js",
+      "background/wasm_loader.js",
+      "background/service_worker.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "lib/compat.js",
+        "lib/vocabulary.js",
+        "lib/recognizer.js",
+        "content_scripts/trails.js",
+        "content_scripts/tooltips.js",
+        "content_scripts/long_click.js",
+        "content_scripts/gestures.js"
+      ],
+      "css": [
+        "content_scripts/ogc.css"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "Orange Gesture Control",
+    "default_icon": {
+      "16": "icons/ogc-16.png",
+      "32": "icons/ogc-32.png",
+      "48": "icons/ogc-48.png"
+    }
+  },
+  "icons": {
+    "16": "icons/ogc-16.png",
+    "32": "icons/ogc-32.png",
+    "48": "icons/ogc-48.png",
+    "128": "icons/ogc-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "wasm/ogc_recognizer.wasm",
+        "sidebar/sidebar.html",
+        "sidebar/sidebar.js",
+        "icons/ogc-32.png",
+        "img/*.png",
+        "img/*.gif"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}
