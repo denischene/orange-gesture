@@ -24,14 +24,14 @@
   const MOVE_THRESHOLD_PX = 5;
   let idleReleaseTimer = null;
   let idleReleased = false;
-  // Android : décision de prise en charge du geste prise au premier
-  // déplacement significatif. Tant que l'utilisateur n'a fait QUE du
-  // vertical pur (haut OU bas seul, sans composante horizontale), on
-  // laisse le navigateur faire son défilement / pull-to-refresh natif.
-  // Dès que le geste s'écarte de la verticale, OGC le prend.
-  let androidDecision = null; // null | "ogc" | "native"
-  const ANDROID_DECIDE_DIST_PX = 18; // touch-slop typique
-  const ANDROID_VERTICAL_DEG = 30;   // ±30° autour de la verticale = natif
+  // Android : OGC capture systématiquement les gestes mono-doigt (un
+  // touch-action:none est posé dès le pointerdown). Le défilement / zoom
+  // natifs restent disponibles via la gestuelle multi-touch (deux doigts).
+  // Sans ce parti pris, tous les gestes commençant par un trait vertical
+  // (Aide, Haut/Bas de page, Onglets, Nouvel onglet, Fermer, Enregistrer,
+  // Rechercher, Valider…) étaient happés par le pull-to-refresh ou le
+  // scroll natif avant qu'OGC puisse les reconnaître.
+  let multiTouchReleased = false;
   // Après libération par timer en clic-gauche sur Chromium, on pilote
   // nous-mêmes la sélection texte car le moteur natif a été inhibé au
   // mousedown initial et ne se rallume pas tout seul.
@@ -326,11 +326,20 @@
     } else if (e.button !== settings.button) {
       return;
     }
-    // Sur Android, on NE bloque PAS le touch-action immédiatement : le
-    // défilement vertical natif et le pull-to-refresh doivent rester
-    // disponibles pour les gestes purement verticaux. La décision est
-    // prise au premier touchmove significatif dans onAndroidTouchMove().
-    androidDecision = null;
+    // Sur Android, on POSE immédiatement touch-action:none pour empêcher
+    // le pull-to-refresh et le scroll natif de happer le geste avant sa
+    // reconnaissance. Le scroll/zoom restent accessibles en posant un
+    // second doigt (multi-touch → onAndroidTouchMove libère OGC).
+    multiTouchReleased = false;
+    if (IS_ANDROID && e.pointerType === "touch") {
+      try {
+        const de = document.documentElement;
+        if (de && !de.hasAttribute("data-ogc-prev-touchaction")) {
+          de.setAttribute("data-ogc-prev-touchaction", de.style.touchAction || "");
+          de.style.touchAction = "none";
+        }
+      } catch {}
+    }
     // Stratégie : ne RIEN bloquer tant qu'aucun geste n'est détecté, afin
     // de préserver le comportement natif du clic (focus d'un champ, début
     // de sélection texte, menu contextuel) tant que l'utilisateur ne
@@ -377,39 +386,18 @@
     scheduleIdleRelease(e.button);
   }
 
-  // Android — décide, au premier déplacement significatif, si le geste
-  // est pris par OGC (composante horizontale présente) ou laissé au
-  // navigateur (purement vertical : scroll / pull-to-refresh).
+  // Android — bloque le comportement natif tant qu'OGC capture le geste.
+  // Si un second doigt arrive, on libère immédiatement : l'utilisateur
+  // demande explicitement un scroll/zoom natif à deux doigts.
   function onAndroidTouchMove(e) {
-    if (!IS_ANDROID || !active) return;
-    if (!e.touches || e.touches.length !== 1) return;
-    if (androidDecision === "native") return;
-    if (androidDecision === "ogc") {
-      try { e.preventDefault(); } catch {}
-      return;
-    }
-    const t = e.touches[0];
-    const dx = t.clientX - downX;
-    const dy = t.clientY - downY;
-    const dist = Math.hypot(dx, dy);
-    if (dist < ANDROID_DECIDE_DIST_PX) return;
-    // Angle par rapport à la verticale : 0° = pile vertical, 90° = pile horizontal.
-    const angle = Math.abs(Math.atan2(dx, -dy) * 180 / Math.PI);
-    const vertAngle = Math.min(angle, 180 - angle);
-    if (vertAngle <= ANDROID_VERTICAL_DEG) {
-      androidDecision = "native";
+    if (!IS_ANDROID) return;
+    if (e.touches && e.touches.length > 1 && !multiTouchReleased) {
+      multiTouchReleased = true;
       releaseToNative();
       return;
     }
-    androidDecision = "ogc";
+    if (!active || multiTouchReleased) return;
     try { e.preventDefault(); } catch {}
-    try {
-      const de = document.documentElement;
-      if (de && !de.hasAttribute("data-ogc-prev-touchaction")) {
-        de.setAttribute("data-ogc-prev-touchaction", de.style.touchAction || "");
-        de.style.touchAction = "none";
-      }
-    } catch {}
   }
 
   function onMove(e) {

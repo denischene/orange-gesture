@@ -160,13 +160,22 @@
 .ogc-card:hover .ogc-dot {
   animation: ogc-dot-pulse 4s ease-in-out infinite;
 }
+.ogc-card.ogc-card-active .ogc-dot {
+  animation: ogc-dot-pulse 4s ease-in-out infinite;
+}
 .ogc-card .ogc-label-long {
   opacity: 0;
 }
 .ogc-card:hover .ogc-label-long {
   animation: ogc-label-long 4s ease-in-out infinite;
 }
+.ogc-card.ogc-card-active .ogc-label-long {
+  animation: ogc-label-long 4s ease-in-out infinite;
+}
 .ogc-card:hover .ogc-label-base {
+  animation: ogc-label-base 4s ease-in-out infinite;
+}
+.ogc-card.ogc-card-active .ogc-label-base {
   animation: ogc-label-base 4s ease-in-out infinite;
 }
 @keyframes ogc-dot-pulse {
