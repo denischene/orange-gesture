@@ -26,6 +26,22 @@ const ITEMS = [
 const grid = document.getElementById("grid");
 const preview = document.getElementById("preview");
 let activeCell = null;
+
+// Bouton de fermeture : essaie d'abord la sidebar native Firefox, puis
+// signale au parent (iframe injectée par gestures.js) de se retirer.
+const closeBtn = document.getElementById("close-btn");
+if (closeBtn) {
+  closeBtn.addEventListener("click", async () => {
+    try {
+      if (globalThis.browser?.sidebarAction?.close) {
+        await browser.sidebarAction.close();
+        return;
+      }
+    } catch {}
+    try { window.parent?.postMessage("ogc.closeHelpPanel", "*"); } catch {}
+    try { window.close(); } catch {}
+  });
+}
 function showPreview(name, lbl) {
   preview.innerHTML = "";
   const img = document.createElement("img");
