@@ -13,6 +13,11 @@
                padding: 10px 12px 6px; }
       header img { width: 28px; height: 28px; }
       h1 { color: var(--orange); font-size: 14px; margin: 0; }
+      #close-btn { margin-left: auto; background: transparent; border: 0;
+                   color: #555; font-size: 18px; line-height: 1; cursor: pointer;
+                   padding: 4px 8px; border-radius: 4px; }
+      #close-btn:hover { background: #f0f0f0; color: #000; }
+      #close-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
       .hint { font-size: 11px; color: #666; margin: 0 12px 6px;
               font-style: italic; line-height: 1.35; }
       .hint span { display: block; }
@@ -46,6 +51,7 @@
     <header>
       <img src="../icons/ogc-32.png" alt="" />
       <h1>OGC — Aide gestes</h1>
+      <button id="close-btn" type="button" aria-label="Fermer le panneau d'aide" title="Fermer">✕</button>
     </header>
     <div id="grid"></div>
     <p class="hint">

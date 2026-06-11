@@ -24,6 +24,14 @@
   const MOVE_THRESHOLD_PX = 5;
   let idleReleaseTimer = null;
   let idleReleased = false;
+  // Android : décision de prise en charge du geste prise au premier
+  // déplacement significatif. Tant que l'utilisateur n'a fait QUE du
+  // vertical pur (haut OU bas seul, sans composante horizontale), on
+  // laisse le navigateur faire son défilement / pull-to-refresh natif.
+  // Dès que le geste s'écarte de la verticale, OGC le prend.
+  let androidDecision = null; // null | "ogc" | "native"
+  const ANDROID_DECIDE_DIST_PX = 18; // touch-slop typique
+  const ANDROID_VERTICAL_DEG = 30;   // ±30° autour de la verticale = natif
   // Après libération par timer en clic-gauche sur Chromium, on pilote
   // nous-mêmes la sélection texte car le moteur natif a été inhibé au
   // mousedown initial et ne se rallume pas tout seul.
@@ -207,6 +215,16 @@
     if (idleReleaseTimer) { clearTimeout(idleReleaseTimer); idleReleaseTimer = null; }
   }
 
+  // Bascule l'état OGC en mode «relâché» pour laisser la main au
+  // navigateur (utilisé sur Android quand le geste est purement vertical).
+  function releaseToNative() {
+    active = false;
+    clearTimers();
+    restoreUserSelect();
+    if (settings.trails) window.OGC_Trails?.end();
+    window.OGC_Tooltips?.hide();
+  }
+
   function scheduleLongPress() {
     clearTimers();
     longPressTimer = setTimeout(() => {
@@ -308,16 +326,11 @@
     } else if (e.button !== settings.button) {
       return;
     }
-    // Empêche le scroll natif et le pinch pendant qu'un geste est actif.
-    if (IS_ANDROID) {
-      try {
-        const de = document.documentElement;
-        if (de && !de.hasAttribute("data-ogc-prev-touchaction")) {
-          de.setAttribute("data-ogc-prev-touchaction", de.style.touchAction || "");
-          de.style.touchAction = "none";
-        }
-      } catch {}
-    }
+    // Sur Android, on NE bloque PAS le touch-action immédiatement : le
+    // défilement vertical natif et le pull-to-refresh doivent rester
+    // disponibles pour les gestes purement verticaux. La décision est
+    // prise au premier touchmove significatif dans onAndroidTouchMove().
+    androidDecision = null;
     // Stratégie : ne RIEN bloquer tant qu'aucun geste n'est détecté, afin
     // de préserver le comportement natif du clic (focus d'un champ, début
     // de sélection texte, menu contextuel) tant que l'utilisateur ne
@@ -362,6 +375,41 @@
     if (settings.trails) window.OGC_Trails?.start(e.clientX, e.clientY);
     window.OGC_Tooltips?.show("");
     scheduleIdleRelease(e.button);
+  }
+
+  // Android — décide, au premier déplacement significatif, si le geste
+  // est pris par OGC (composante horizontale présente) ou laissé au
+  // navigateur (purement vertical : scroll / pull-to-refresh).
+  function onAndroidTouchMove(e) {
+    if (!IS_ANDROID || !active) return;
+    if (!e.touches || e.touches.length !== 1) return;
+    if (androidDecision === "native") return;
+    if (androidDecision === "ogc") {
+      try { e.preventDefault(); } catch {}
+      return;
+    }
+    const t = e.touches[0];
+    const dx = t.clientX - downX;
+    const dy = t.clientY - downY;
+    const dist = Math.hypot(dx, dy);
+    if (dist < ANDROID_DECIDE_DIST_PX) return;
+    // Angle par rapport à la verticale : 0° = pile vertical, 90° = pile horizontal.
+    const angle = Math.abs(Math.atan2(dx, -dy) * 180 / Math.PI);
+    const vertAngle = Math.min(angle, 180 - angle);
+    if (vertAngle <= ANDROID_VERTICAL_DEG) {
+      androidDecision = "native";
+      releaseToNative();
+      return;
+    }
+    androidDecision = "ogc";
+    try { e.preventDefault(); } catch {}
+    try {
+      const de = document.documentElement;
+      if (de && !de.hasAttribute("data-ogc-prev-touchaction")) {
+        de.setAttribute("data-ogc-prev-touchaction", de.style.touchAction || "");
+        de.style.touchAction = "none";
+      }
+    } catch {}
   }
 
   function onMove(e) {
@@ -553,6 +601,18 @@
   window.addEventListener("pointerdown", onDown, true);
   window.addEventListener("pointermove", onMove, true);
   window.addEventListener("pointerup", onUp, true);
+  // Décideur tactile Android, branché en non-passif au plus tôt.
+  if (IS_ANDROID) {
+    window.addEventListener("touchmove", onAndroidTouchMove, { passive: false, capture: true });
+  }
+  // Permet au panneau d'aide injecté (iframe sidebar) de demander sa
+  // fermeture via postMessage("ogc.closeHelpPanel", "*").
+  window.addEventListener("message", (ev) => {
+    if (ev?.data === "ogc.closeHelpPanel") {
+      const p = document.getElementById("__ogc_help_panel__");
+      if (p) p.remove();
+    }
+  });
   // Bloque le drag natif d'images / liens / texte sélectionné pendant un
   // geste clic-gauche.
   window.addEventListener("dragstart", (e) => {

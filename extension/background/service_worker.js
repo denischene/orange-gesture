@@ -248,8 +248,14 @@ function findVocab(seq) {
 const ACTIONS = {
   "page.back":      async (tab) => navigateAndAdopt(tab, () => browser.tabs.goBack(tab.id)),
   "page.forward":   async (tab) => navigateAndAdopt(tab, () => browser.tabs.goForward(tab.id)),
-  "scroll.up":      async (tab, ctx) => contextualScroll(tab, ctx, "up"),
-  "scroll.down":    async (tab, ctx) => contextualScroll(tab, ctx, "down"),
+  "scroll.up":      async (tab, ctx) => {
+    if (IS_ANDROID) return androidUnavailable(tab);
+    return contextualScroll(tab, ctx, "up");
+  },
+  "scroll.down":    async (tab, ctx) => {
+    if (IS_ANDROID) return androidUnavailable(tab);
+    return contextualScroll(tab, ctx, "down");
+  },
   "page.top":       async (tab) => scrollExtreme(tab, "top"),
   "page.bottom":    async (tab) => scrollExtreme(tab, "bottom"),
   "site.home":      async (tab, ctx) => {
@@ -358,9 +364,34 @@ const ACTIONS = {
   },
   "window.maximize":async () => cycleWindowState(+1),
   "window.minimize":async () => cycleWindowState(-1),
-  "zoom.in":        async (tab) => zoomBy(tab, +0.1),
-  "zoom.out":       async (tab) => zoomBy(tab, -0.1),
-  "bookmarks.add":  async (tab) => browser.bookmarks.create({ title: tab.title, url: tab.url }),
+  "zoom.in":        async (tab) => {
+    if (IS_ANDROID) return androidUnavailable(tab);
+    return zoomBy(tab, +0.1);
+  },
+  "zoom.out":       async (tab) => {
+    if (IS_ANDROID) return androidUnavailable(tab);
+    return zoomBy(tab, -0.1);
+  },
+  "bookmarks.add":  async (tab) => {
+    try {
+      await browser.bookmarks.create({ title: tab.title, url: tab.url });
+      if (IS_ANDROID) {
+        browser.notifications?.create?.({
+          type: "basic",
+          iconUrl: "icons/ogc-48.png",
+          title: "Favoris",
+          message: "Page ajoutée aux favoris."
+        });
+      }
+    } catch (e) {
+      browser.notifications?.create?.({
+        type: "basic",
+        iconUrl: "icons/ogc-48.png",
+        title: "Favoris",
+        message: "Ajout impossible : " + (e?.message || e)
+      });
+    }
+  },
   "page.saveAs":    async (tab, ctx) => {
     const url = ctx?.linkHref ?? ctx?.imageSrc ?? tab.url;
     if (!url || /^(about:|moz-extension:|chrome:)/i.test(url)) {
@@ -546,6 +577,18 @@ async function zoomBy(tab, delta) {
 }
 
 const WIN_STATES = ["minimized", "normal", "maximized", "fullscreen"];
+async function androidUnavailable(tab) {
+  try {
+    browser.tabs.sendMessage(tab.id, {
+      type: "ogc.feedback",
+      label: "Indisponible sur Android",
+      long: false,
+      voice: !!SETTINGS.voice
+    }).catch(() => {});
+  } catch {}
+  return false;
+}
+
 async function cycleWindowState(delta) {
   // Android (Fenix) n'a pas l'API browser.windows : on signale poliment
   // que la fonction n'est pas applicable et on arrête toute répétition.
