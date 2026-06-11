@@ -374,7 +374,21 @@ const ACTIONS = {
   },
   "bookmarks.add":  async (tab) => {
     try {
-      await browser.bookmarks.create({ title: tab.title, url: tab.url });
+      const create = { title: tab.title, url: tab.url };
+      // Fenix exige `parentId` : `bookmarks.create` sans parent échoue
+      // silencieusement. On vise le dossier "Mobile bookmarks", puis à
+      // défaut le premier dossier racine.
+      if (IS_ANDROID) {
+        try {
+          const tree = await browser.bookmarks.getTree();
+          const root = tree?.[0];
+          const folders = (root?.children || []).filter((c) => !c.url);
+          const mobile = folders.find((c) => /mobile/i.test(c.id) || /mobile/i.test(c.title))
+                      || folders[0];
+          if (mobile?.id) create.parentId = mobile.id;
+        } catch {}
+      }
+      await browser.bookmarks.create(create);
       if (IS_ANDROID) {
         browser.notifications?.create?.({
           type: "basic",
@@ -403,7 +417,10 @@ const ACTIONS = {
       });
     }
     try {
-      await browser.downloads.download({ url, saveAs: true });
+      // Fenix ne supporte pas `saveAs:true` (pas de boîte de dialogue) :
+      // on demande un téléchargement direct sur Android.
+      const opts = IS_ANDROID ? { url } : { url, saveAs: true };
+      await browser.downloads.download(opts);
     } catch (e) {
       console.warn("[OGC] download failed", e);
       browser.notifications?.create?.({
@@ -438,7 +455,13 @@ async function focusInTab(tab, kind) {
 
 
 async function cycleTab(tab, delta) {
-  const tabs = await browser.tabs.query({ currentWindow: true });
+  // Sur Fenix, la notion de "currentWindow" est inopérante : on liste
+  // tous les onglets puis on filtre sur `windowId` du tab d'origine si
+  // celui-ci est défini.
+  let tabs = await browser.tabs.query(IS_ANDROID ? {} : { currentWindow: true });
+  if (IS_ANDROID && tab.windowId != null) {
+    tabs = tabs.filter((t) => t.windowId === tab.windowId);
+  }
   const sorted = tabs.sort((a, b) => a.index - b.index);
   if (sorted.length < 2) return false;
   const i = sorted.findIndex((t) => t.id === tab.id);

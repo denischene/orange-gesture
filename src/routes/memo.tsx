@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export const Route = createFileRoute("/memo")({
   component: Memo,
@@ -150,12 +150,24 @@ function GestureCard({ g }: { g: Gesture }) {
   const [playKey, setPlayKey] = useState(0);
   const [kbActive, setKbActive] = useState(false);
   const figRef = useRef<HTMLElement>(null);
+  // Sur appareil tactile (pas de :hover natif), un tap simple sur la
+  // vignette doit déclencher la même animation que le survol desktop.
+  // L'état revient au repos après ~4 s (durée d'un cycle d'animation).
+  const tapTimer = useRef<number | null>(null);
+  const activate = () => {
+    setKbActive(true);
+    setPlayKey((k) => k + 1);
+    if (tapTimer.current) window.clearTimeout(tapTimer.current);
+    tapTimer.current = window.setTimeout(() => setKbActive(false), 4200);
+  };
+  useEffect(() => () => {
+    if (tapTimer.current) window.clearTimeout(tapTimer.current);
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      setKbActive(true);
-      setPlayKey((k) => k + 1);
+      activate();
     }
   };
 
@@ -166,7 +178,7 @@ function GestureCard({ g }: { g: Gesture }) {
       tabIndex={0}
       aria-label={g.alt || g.title}
       onKeyDown={handleKeyDown}
-      onBlur={() => setKbActive(false)}
+      onClick={activate}
       className={`ogc-card group ${activeCls} rounded-xl border border-border bg-card p-4 flex flex-col items-center text-center hover:shadow-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
     >
       <div className="relative h-28 w-28 text-foreground">
