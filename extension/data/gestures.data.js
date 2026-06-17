@@ -219,7 +219,10 @@ globalThis.OGC_GESTURES_DATA = {
       "aliases": [
         "RDD",
         "RRD",
-        "RRDD"
+        "RRDD",
+        "RDRD",
+        "RDRDD",
+        "RDRRD"
       ]
     },
     {
@@ -235,7 +238,12 @@ globalThis.OGC_GESTURES_DATA = {
         "LU",
         "LUU",
         "LLU",
-        "LLUU"
+        "LLUU",
+        "LDLD",
+        "LDLDD",
+        "LDLLD",
+        "LULU",
+        "LULUU"
       ]
     },
     {
