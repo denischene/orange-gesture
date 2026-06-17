@@ -462,20 +462,29 @@
             de.style.MozUserSelect = "none";
           }
         } catch {}
-        try {
-          const s = window.getSelection?.();
-          if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
-        } catch {}
+        // Ne JAMAIS effacer une sélection préexistante : l'utilisateur
+        // peut s'en servir comme entrée pour « Copier » ou « Rechercher
+        // sur internet » (search.web). Si rien n'était sélectionné à
+        // l'appui, on nettoie l'amorce parasite que le drag natif aurait
+        // pu produire (hors champ éditable).
+        if (!initialSelection) {
+          try {
+            const s = window.getSelection?.();
+            if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
+          } catch {}
+        }
       }
     }
     if (movedDuringPress) {
       // Pendant le tracé : on annule l'extension native de la sélection
       // et le drag d'images / liens.
       try { e.preventDefault(); } catch {}
-      try {
-        const s = window.getSelection?.();
-        if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
-      } catch {}
+      if (!initialSelection) {
+        try {
+          const s = window.getSelection?.();
+          if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
+        } catch {}
+      }
     } else {
       // Pas (encore) de geste : on ne touche à rien — le navigateur peut
       // démarrer une sélection texte ou placer le caret normalement.
