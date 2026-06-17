@@ -542,23 +542,22 @@
       suppressContext = true;
       e.preventDefault();
       if (longPressFired) return;
-      // Firefox-only : la séquence du geste « Copier » (= scroll.up avec
-      // sélection non vide) se termine par un pointerup qui efface la
-      // sélection côté Gecko. On capture les ranges actifs avant l'envoi
-      // du message et on les ré-applique après que l'action a eu le
-      // temps de copier dans le presse-papier.
+      // Tous navigateurs : la fin du geste (pointerup) peut effacer la
+      // sélection courante (Gecko le fait systématiquement, Chromium
+      // selon les pages). On la sauvegarde AVANT d'envoyer le message
+      // d'action et on la ré-applique après pour que « Copier » et
+      // « Rechercher avec présélection » conservent un retour visuel
+      // clair jusqu'à l'aboutissement.
       let savedRanges = null;
-      if (IS_FIREFOX) {
-        try {
-          const sel = window.getSelection?.();
-          if (sel && sel.rangeCount && (sel.toString() || "").length > 0) {
-            savedRanges = [];
-            for (let i = 0; i < sel.rangeCount; i++) {
-              savedRanges.push(sel.getRangeAt(i).cloneRange());
-            }
+      try {
+        const sel = window.getSelection?.();
+        if (sel && sel.rangeCount && (sel.toString() || "").length > 0) {
+          savedRanges = [];
+          for (let i = 0; i < sel.rangeCount; i++) {
+            savedRanges.push(sel.getRangeAt(i).cloneRange());
           }
-        } catch {}
-      }
+        }
+      } catch {}
       browser.runtime.sendMessage({
         type: "ogc.stroke",
         points: points.slice(),
@@ -574,12 +573,13 @@
             for (const r of savedRanges) sel.addRange(r);
           } catch {}
         };
-        // Plusieurs tentatives échelonnées : Firefox efface la sélection
-        // à différents moments selon que l'action passe par
-        // navigator.clipboard ou document.execCommand("copy").
+        // Plusieurs tentatives échelonnées : la sélection peut être
+        // effacée à différents instants selon le navigateur et la voie
+        // utilisée par l'action (clipboard.writeText vs execCommand).
         requestAnimationFrame(restore);
         setTimeout(restore, 60);
         setTimeout(restore, 200);
+        setTimeout(restore, 600);
       }
     }
   }
