@@ -203,11 +203,22 @@
 
   function captureLinkAt(x, y, fallbackTarget) {
     if (firstLinkHref) return;
-    let el = null;
-    try { el = document.elementFromPoint(x, y); } catch {}
-    el = el || fallbackTarget;
-    const a = el?.closest?.("a[href]");
-    if (a?.href) firstLinkHref = a.href;
+    // On enquête sur TOUS les éléments empilés sous le pointeur (canvas
+    // de tracé, tooltips OGC, overlays). Le premier qui possède un
+    // ancêtre <a href> remporte le rôle de « premier lien franchi ».
+    let stack = [];
+    try {
+      stack = document.elementsFromPoint?.(x, y) ?? [];
+      if (!stack.length) {
+        const el = document.elementFromPoint(x, y);
+        if (el) stack = [el];
+      }
+    } catch {}
+    if (fallbackTarget) stack.push(fallbackTarget);
+    for (const el of stack) {
+      const a = el?.closest?.("a[href]");
+      if (a?.href) { firstLinkHref = a.href; return; }
+    }
   }
 
   function clearTimers() {
