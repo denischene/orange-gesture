@@ -151,9 +151,34 @@
     const next = visible[((idx + dir) % n + n) % n];
     try { next.focus({ preventScroll: false }); } catch { try { next.focus(); } catch {} }
     try { next.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); } catch {}
+    paintFocusRing(next);
     // Mémorise pour la répétition (le geste est encore en cours, l'appui
     // long va re-déclencher cette action sans nouveau pointerdown).
     savedActiveElement = next;
+  }
+
+  // Peint un anneau de focus OGC (cadre noir épais + liseré blanc) sur
+  // l'élément cible. La règle CSS est définie dans content_scripts/ogc.css.
+  // Indépendant du style natif du site : visible sur fond clair et foncé,
+  // et bien plus épais que la majorité des `:focus` par défaut.
+  let lastFocusRingEl = null;
+  let focusRingTimer = null;
+  function paintFocusRing(el) {
+    try {
+      if (lastFocusRingEl && lastFocusRingEl !== el) {
+        lastFocusRingEl.classList.remove("ogc-focus-ring");
+      }
+      lastFocusRingEl = el;
+      el.classList.add("ogc-focus-ring");
+      if (focusRingTimer) clearTimeout(focusRingTimer);
+      // L'anneau persiste tant que l'utilisateur enchaîne avec
+      // Élément suivant/précédent. Au bout de 6 s d'inactivité on
+      // rend la main au style natif.
+      focusRingTimer = setTimeout(() => {
+        try { el.classList.remove("ogc-focus-ring"); } catch {}
+        if (lastFocusRingEl === el) lastFocusRingEl = null;
+      }, 6000);
+    } catch {}
   }
 
   function stopLongPressRepeat() {
@@ -203,11 +228,22 @@
 
   function captureLinkAt(x, y, fallbackTarget) {
     if (firstLinkHref) return;
-    let el = null;
-    try { el = document.elementFromPoint(x, y); } catch {}
-    el = el || fallbackTarget;
-    const a = el?.closest?.("a[href]");
-    if (a?.href) firstLinkHref = a.href;
+    // On enquête sur TOUS les éléments empilés sous le pointeur (canvas
+    // de tracé, tooltips OGC, overlays). Le premier qui possède un
+    // ancêtre <a href> remporte le rôle de « premier lien franchi ».
+    let stack = [];
+    try {
+      stack = document.elementsFromPoint?.(x, y) ?? [];
+      if (!stack.length) {
+        const el = document.elementFromPoint(x, y);
+        if (el) stack = [el];
+      }
+    } catch {}
+    if (fallbackTarget) stack.push(fallbackTarget);
+    for (const el of stack) {
+      const a = el?.closest?.("a[href]");
+      if (a?.href) { firstLinkHref = a.href; return; }
+    }
   }
 
   function clearTimers() {
@@ -451,20 +487,29 @@
             de.style.MozUserSelect = "none";
           }
         } catch {}
-        try {
-          const s = window.getSelection?.();
-          if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
-        } catch {}
+        // Ne JAMAIS effacer une sélection préexistante : l'utilisateur
+        // peut s'en servir comme entrée pour « Copier » ou « Rechercher
+        // sur internet » (search.web). Si rien n'était sélectionné à
+        // l'appui, on nettoie l'amorce parasite que le drag natif aurait
+        // pu produire (hors champ éditable).
+        if (!initialSelection) {
+          try {
+            const s = window.getSelection?.();
+            if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
+          } catch {}
+        }
       }
     }
     if (movedDuringPress) {
       // Pendant le tracé : on annule l'extension native de la sélection
       // et le drag d'images / liens.
       try { e.preventDefault(); } catch {}
-      try {
-        const s = window.getSelection?.();
-        if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
-      } catch {}
+      if (!initialSelection) {
+        try {
+          const s = window.getSelection?.();
+          if (s && s.rangeCount && !initialEditable) s.removeAllRanges();
+        } catch {}
+      }
     } else {
       // Pas (encore) de geste : on ne touche à rien — le navigateur peut
       // démarrer une sélection texte ou placer le caret normalement.
@@ -522,23 +567,22 @@
       suppressContext = true;
       e.preventDefault();
       if (longPressFired) return;
-      // Firefox-only : la séquence du geste « Copier » (= scroll.up avec
-      // sélection non vide) se termine par un pointerup qui efface la
-      // sélection côté Gecko. On capture les ranges actifs avant l'envoi
-      // du message et on les ré-applique après que l'action a eu le
-      // temps de copier dans le presse-papier.
+      // Tous navigateurs : la fin du geste (pointerup) peut effacer la
+      // sélection courante (Gecko le fait systématiquement, Chromium
+      // selon les pages). On la sauvegarde AVANT d'envoyer le message
+      // d'action et on la ré-applique après pour que « Copier » et
+      // « Rechercher avec présélection » conservent un retour visuel
+      // clair jusqu'à l'aboutissement.
       let savedRanges = null;
-      if (IS_FIREFOX) {
-        try {
-          const sel = window.getSelection?.();
-          if (sel && sel.rangeCount && (sel.toString() || "").length > 0) {
-            savedRanges = [];
-            for (let i = 0; i < sel.rangeCount; i++) {
-              savedRanges.push(sel.getRangeAt(i).cloneRange());
-            }
+      try {
+        const sel = window.getSelection?.();
+        if (sel && sel.rangeCount && (sel.toString() || "").length > 0) {
+          savedRanges = [];
+          for (let i = 0; i < sel.rangeCount; i++) {
+            savedRanges.push(sel.getRangeAt(i).cloneRange());
           }
-        } catch {}
-      }
+        }
+      } catch {}
       browser.runtime.sendMessage({
         type: "ogc.stroke",
         points: points.slice(),
@@ -554,12 +598,13 @@
             for (const r of savedRanges) sel.addRange(r);
           } catch {}
         };
-        // Plusieurs tentatives échelonnées : Firefox efface la sélection
-        // à différents moments selon que l'action passe par
-        // navigator.clipboard ou document.execCommand("copy").
+        // Plusieurs tentatives échelonnées : la sélection peut être
+        // effacée à différents instants selon le navigateur et la voie
+        // utilisée par l'action (clipboard.writeText vs execCommand).
         requestAnimationFrame(restore);
         setTimeout(restore, 60);
         setTimeout(restore, 200);
+        setTimeout(restore, 600);
       }
     }
   }

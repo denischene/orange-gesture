@@ -47,6 +47,11 @@ static const OgcEntry OGC_VOCAB[] = {
     { "D-DL-L-L", 5 },
     { "D-DR-R-R", 5 },
     { "DR-UL-DR", 12 },
+    { "L-DL-D-D", 20 },
+    { "L-DL-L-D", 20 },
+    { "L-UL-U-U", 20 },
+    { "R-DR-D-D", 19 },
+    { "R-DR-R-D", 19 },
     { "U-U-UL-L", 4 },
     { "U-U-UR-R", 4 },
     { "U-UL-L-L", 4 },
@@ -66,6 +71,9 @@ static const OgcEntry OGC_VOCAB[] = {
     { "D-DR-R", 5 },
     { "DL-L-L", 5 },
     { "DR-R-R", 5 },
+    { "L-DL-D", 20 },
+    { "L-UL-U", 20 },
+    { "R-DR-D", 19 },
     { "U-U-UL", 4 },
     { "U-U-UR", 4 },
     { "U-UL-L", 4 },
@@ -97,7 +105,7 @@ static const OgcEntry OGC_VOCAB[] = {
     { "R", 1 },
     { "U", 2 },
 };
-static const uint32_t OGC_VOCAB_LEN = 90;
+static const uint32_t OGC_VOCAB_LEN = 98;
 
 static const char* const OGC_ACTIONS[] = {
     "page.back",

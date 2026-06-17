@@ -186,6 +186,9 @@
     <ogc:alias>RDD</ogc:alias>
     <ogc:alias>RRD</ogc:alias>
     <ogc:alias>RRDD</ogc:alias>
+    <ogc:alias>RDRD</ogc:alias>
+    <ogc:alias>RDRDD</ogc:alias>
+    <ogc:alias>RDRRD</ogc:alias>
   </ogc:Gesture>
   <ogc:Gesture rdf:about="urn:ogc:action:element.prev">
     <ogc:action>element.prev</ogc:action>
@@ -200,6 +203,11 @@
     <ogc:alias>LUU</ogc:alias>
     <ogc:alias>LLU</ogc:alias>
     <ogc:alias>LLUU</ogc:alias>
+    <ogc:alias>LDLD</ogc:alias>
+    <ogc:alias>LDLDD</ogc:alias>
+    <ogc:alias>LDLLD</ogc:alias>
+    <ogc:alias>LULU</ogc:alias>
+    <ogc:alias>LULUU</ogc:alias>
   </ogc:Gesture>
   <ogc:Gesture rdf:about="urn:ogc:action:element.activate">
     <ogc:action>element.activate</ogc:action>

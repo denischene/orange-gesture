@@ -217,7 +217,10 @@
       "aliases": [
         "RDD",
         "RRD",
-        "RRDD"
+        "RRDD",
+        "RDRD",
+        "RDRDD",
+        "RDRRD"
       ]
     },
     {
@@ -233,7 +236,12 @@
         "LU",
         "LUU",
         "LLU",
-        "LLUU"
+        "LLUU",
+        "LDLD",
+        "LDLDD",
+        "LDLLD",
+        "LULU",
+        "LULUU"
       ]
     },
     {
