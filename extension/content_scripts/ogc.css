@@ -30,3 +30,17 @@
   background: transparent;
   display: none;
 }
+
+/* Anneau de focus dessiné par OGC : un trait noir épais doublé d'un
+ * liseré blanc, visible aussi bien sur fond clair que sur fond foncé.
+ * Utilisé lors d'« Élément suivant / précédent » pour rendre la cible
+ * du focus immédiatement repérable, quel que soit le style natif. */
+.ogc-focus-ring {
+  outline: 3px solid #000 !important;
+  outline-offset: 2px !important;
+  box-shadow:
+    0 0 0 1px #fff,
+    0 0 0 5px #fff,
+    0 0 0 6px #000 !important;
+  border-radius: 2px;
+}
