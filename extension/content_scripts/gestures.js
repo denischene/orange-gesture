@@ -151,9 +151,34 @@
     const next = visible[((idx + dir) % n + n) % n];
     try { next.focus({ preventScroll: false }); } catch { try { next.focus(); } catch {} }
     try { next.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); } catch {}
+    paintFocusRing(next);
     // Mémorise pour la répétition (le geste est encore en cours, l'appui
     // long va re-déclencher cette action sans nouveau pointerdown).
     savedActiveElement = next;
+  }
+
+  // Peint un anneau de focus OGC (cadre noir épais + liseré blanc) sur
+  // l'élément cible. La règle CSS est définie dans content_scripts/ogc.css.
+  // Indépendant du style natif du site : visible sur fond clair et foncé,
+  // et bien plus épais que la majorité des `:focus` par défaut.
+  let lastFocusRingEl = null;
+  let focusRingTimer = null;
+  function paintFocusRing(el) {
+    try {
+      if (lastFocusRingEl && lastFocusRingEl !== el) {
+        lastFocusRingEl.classList.remove("ogc-focus-ring");
+      }
+      lastFocusRingEl = el;
+      el.classList.add("ogc-focus-ring");
+      if (focusRingTimer) clearTimeout(focusRingTimer);
+      // L'anneau persiste tant que l'utilisateur enchaîne avec
+      // Élément suivant/précédent. Au bout de 6 s d'inactivité on
+      // rend la main au style natif.
+      focusRingTimer = setTimeout(() => {
+        try { el.classList.remove("ogc-focus-ring"); } catch {}
+        if (lastFocusRingEl === el) lastFocusRingEl = null;
+      }, 6000);
+    } catch {}
   }
 
   function stopLongPressRepeat() {
