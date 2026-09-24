@@ -1,0 +1,29 @@
+name: Site statique OGC
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-static-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Installer les dépendances
+        run: bun install --frozen-lockfile
+      - name: Construire les pages statiques
+        run: bun run build
+      - name: Créer l’archive OVH
+        run: bun run package:site
+      - name: Publier l’archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: ogc-site-static
+          path: public/ogc-site-static.zip
+          if-no-files-found: error
