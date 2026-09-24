@@ -1,105 +1,41 @@
-## Statut : implémenté (build initial Android)
+# Plan — Mobile, site statique, gestes tactiles
 
-Livré :
-- Détection plateforme dans `extension/lib/compat.js` (`OGC.isAndroid` / `OGC.isFenix`).
-- `extension/manifest.android.json` (sans `sidebar_action`, `contextMenus`, `commands` ; `gecko_android.strict_min_version = 120`).
-- `extension/content_scripts/gestures.js` : accepte les pointeurs `touch` sur Android (button=0 forcé), pose `touch-action: none` pendant le geste, restauration au pointerup.
-- `extension/background/service_worker.js` : détection async `runtime.getPlatformInfo()`, listener `action.onClicked` qui ouvre `options.html` (popup indisponible sur Fenix), `window.maximize/minimize` désactivés avec notification.
-- `extension/options/options.css` : `@media (max-width: 600px)` pour layout empilé.
-- `scripts/package-android.mjs` : génère `public/ogc-android.xpi`.
-- `src/components/download-button.tsx` + `browser-icon.tsx` : variante Firefox Android.
-- `src/routes/tutorials.tsx` : section Firefox Android (Nightly + collection AMO personnalisée).
+## 1. Mémo des gestes : version mobile
+- Détection mobile (tactile + largeur < 768 px, via `pointer: coarse`) côté page.
+- Vignettes grisées + mention « Inactif sur mobile » : Agrandir fenêtre, Réduire fenêtre.
+- Vignettes non grisées mais libellés ajustés :
+  - Descendre : seul « Dans un champ : Coller » actif ; « Descendre » et « Descendre (répété) » barrés/indiqués inactifs.
+  - Monter : seul « Sur sélection : Copier » actif ; idem.
+  - Haut de page / Bas de page : pictos intervertis et libellés inversés (le geste montant mène en bas, le geste descendant mène en haut — logique « on tire la page »).
+  - Zoomer / Dézoomer : nouveaux pictos (pincement, d'après les images fournies), redessinés en noir épais comme les autres, sans point orange, avec animation curseur ; mention « geste natif du navigateur ».
+- Même adaptation dans le panneau Aide gestes de la version Android de l'extension.
+- Extension Android : Haut/Bas de page exécutent la commande inverse.
 
-Reste hors-scope :
-- Signature AMO (manuelle, hors sandbox) pour activer le `.xpi` sur Firefox Android stable.
-- Tests réels sur appareil Android.
+## 2. Site de présentation statique + ZIP automatique
+- Prérendu de toutes les pages (Accueil, Mémo, Aide, Installation) en HTML statique à la construction, sans dépendance serveur.
+- Workflow GitHub Actions (`.github/workflows/static-site.yml`) : à chaque push, installation, construction, puis création de `ogc-site-static.zip` publié comme artefact téléchargeable (et en « release » optionnelle), prêt à déposer sur OVH par FTP.
 
----
+## 3. Mobile : ascenseur horizontal vs Page précédente/suivante
+- Au début d'un geste horizontal simple, mesure de la marge de défilement disponible dans le sens du geste.
+- Si la marge restante est inférieure à un seuil (~80 px, équivalent d'un mot / demi-bouton) ou si la page est déjà en butée : commande OGC (page précédente/suivante).
+- Sinon : défilement natif ; le geste suivant, une fois en butée, déclenche la commande OGC.
 
-## Objectif
+## 4. Mobile : ne plus annuler le geste quand la page défile
+- Laisser le défilement natif démarrer (plus de blocage systématique au premier contact).
+- Continuer à enregistrer le tracé pendant le défilement (coordonnées écran).
+- Dès qu'un changement de direction est détecté (geste plus complexe qu'un trait droit), bloquer le défilement (`preventDefault` sur `touchmove`), poursuivre le tracé, reconnaître et exécuter la commande.
+- Un simple trait haut/bas/gauche/droite reste un défilement natif.
+- Remplace la règle actuelle « un second doigt pour défiler ».
 
-Faire fonctionner Orange Gesture Control sur **Firefox pour Android** (Fenix), en complément des versions desktop déjà packagées (`ogc.xpi`).
+## 5. Page d'accueil du site puis « Avancer » : solution proposée
+Problème : le retour à la racine est une nouvelle navigation, donc « Avancer » ne mène nulle part.
+Solution proposée : OGC mémorise, pour chaque onglet, l'adresse quittée lors de la commande Page d'accueil. Si le geste Page suivante est fait juste après et que le navigateur ne peut pas avancer, OGC rouvre cette adresse mémorisée. La mémoire est effacée dès que l'utilisateur navigue ailleurs. Fonctionne sur toutes les versions.
 
-## Contraintes Firefox Android (à connaître)
+## 6. Mobile : Page précédente répétée trop de fois
+- Déclenchement de l'appui long plus rapide sur tactile (~500 ms au lieu du délai actuel).
+- Répétitions uniquement pendant l'appui : arrêt immédiat au relâchement du doigt (`pointerup`/`touchend`/`touchcancel`), avec annulation des répétitions en attente côté arrière-plan.
+- Correction du bug : la boucle de répétition n'attend plus la fin des navigations en file ; un jeton de répétition est invalidé au relâchement.
 
-Firefox Android exécute des WebExtensions, mais avec un sous-ensemble limité :
-
-- **Pas de souris** : les gestes doivent être déclenchés au doigt (Pointer Events `touch`) plutôt qu’à `mousedown`/`contextmenu`.
-- **Pas de `browserAction.default_popup`** : le popup ne s’affiche pas comme sur desktop. Il faut basculer vers une page d’options accessible depuis le menu Firefox.
-- **Pas de `sidebar_action`** : la sidebar n’existe pas. L’aide doit s’ouvrir comme overlay in-page (déjà géré par `help.toggle`) ou comme onglet dédié.
-- **Pas de `contextMenus`** sur Fenix actuel : à retirer ou rendre conditionnel.
-- **Pas de raccourcis `commands`** liés au clavier matériel.
-- **`tabs.create` / `tabs.update`** : OK ; pas de fenêtres multiples (`windows.*` largement absent → `window.maximize`/`minimize` ne fonctionneront pas, désactiver ou remapper).
-- **Distribution** : Firefox Android n’installe que les extensions signées via AMO ou via la « Collection de modules complémentaires personnalisée » (Nightly). Le `.xpi` actuel doit être soumis à AMO pour être installable sur Fenix stable.
-- **Manifest** : Fenix supporte MV3 depuis Firefox 120, mais le `background.service_worker` n’est pas exécuté ; on garde `background.scripts` (event page) — déjà présent dans `manifest.json`.
-
-## Plan d’implémentation
-
-### 1. Détection plateforme
-
-Dans `extension/lib/compat.js`, ajouter :
-```js
-OGC.isAndroid = /Android/i.test(navigator.userAgent);
-OGC.isFenix   = OGC.isAndroid && typeof browser !== "undefined";
-```
-Exposer un flag global utilisé par tous les modules.
-
-### 2. Manifest dédié Android
-
-Créer `extension/manifest.android.json` (variante générée au build) :
-- Retirer `sidebar_action`, `contextMenus` (permission), `commands`.
-- Conserver `background.scripts` (event page) uniquement.
-- `action` sans `default_popup` (le clic ouvre la page d’options en plein écran).
-- `strict_min_version` Gecko : `"120.0"`.
-- `browser_specific_settings.gecko_android` : `{ "strict_min_version": "120.0" }`.
-
-Adapter `scripts/build-gesture-exports.mjs` (ou nouveau script `scripts/package-extensions.mjs`) pour produire `public/ogc-android.xpi` avec ce manifest.
-
-### 3. Entrées tactiles
-
-Dans `extension/content_scripts/gestures.js` :
-- Ajouter écouteurs `pointerdown`/`pointermove`/`pointerup` avec `pointerType === "touch"`.
-- Sur Android, déclencheur = **appui long à un doigt** (équivalent du clic-maintenu). Timer paramétrable (réutiliser le réglage « Action du clic avant le geste »).
-- Désactiver la détection `contextmenu` (inutile sur tactile).
-- Empêcher le scroll natif pendant un geste actif via `touch-action: none` ajouté dynamiquement à l’élément racine lorsque le geste démarre.
-
-### 4. Adaptation UI
-
-- **Popup** : sur Android, `browser.action.onClicked` ouvre `options/options.html` dans un nouvel onglet (au lieu du popup). Ajouter listener conditionnel dans `service_worker.js`.
-- **Sidebar Aide** : remplacer par un overlay plein écran injecté dans la page courante (déjà la stratégie pour `help.toggle` → vérifier qu’elle fonctionne sans `sidebar_action`).
-- **Page Options** : passer en layout responsive (colonnes empilées sous 600 px) dans `extension/options/options.css`.
-
-### 5. Désactivation des gestes non supportés
-
-Dans `service_worker.js`, si `OGC.isAndroid` :
-- `window.maximize` / `window.minimize` → no-op + toast « Indisponible sur Android ».
-- `tab.close`, `tab.new`, `tab.next`, `tab.prev`, `page.back`, `page.forward`, `scroll.*`, `page.top`, `page.bottom`, `bookmarks.add`, `site.home`, `search.web`, `help.toggle`, `element.*`, `page.saveAs` → tous testés ; ajuster ceux qui échouent.
-
-### 6. Packaging & distribution
-
-- Construire `public/ogc-android.xpi` (signé via `web-ext sign` lors d’une étape manuelle hors-build automatique).
-- Mettre à jour la page **Installation** (`src/routes/tutorials.tsx`) avec une section dédiée Firefox Android :
-  - Lien de téléchargement direct (Nightly + collection personnalisée).
-  - Étapes : activer le débogage USB, ajouter la collection AMO, installer.
-  - Note : version stable nécessite publication AMO.
-- Mettre à jour la page **Accueil** pour mentionner « Firefox Android (beta) ».
-
-### 7. Tests
-
-- Vérifier sur Firefox Nightly Android avec `web-ext run --target firefox-android` (manuel, hors sandbox).
-- Smoke test : gestes simples (L, R, U, D), gestes composés (UUR, DRUR), aide.
-
-## Livrables
-
-- `extension/manifest.android.json`
-- Modifications dans `compat.js`, `gestures.js`, `service_worker.js`, `options.css`
-- `scripts/package-extensions.mjs` (nouveau) pour automatiser le packaging des 6 cibles
-- `public/ogc-android.xpi`
-- Section Android dans `src/routes/tutorials.tsx` + bouton de téléchargement
-- Mise à jour `src/components/download-button.tsx` pour exposer la variante Android
-
-## Hors-scope
-
-- Signature AMO (manuelle, hors sandbox)
-- Support Chrome/Edge Android (non disponible pour les extensions tierces)
-- Support iOS (les WebExtensions Safari nécessitent un binaire Xcode séparé)
+## Technique
+- Fichiers : `src/routes/memo.tsx`, `src/styles.css`, nouveaux `public/img/zoom_mobile*.png/gif`, `extension/content_scripts/gestures.js`, `extension/background/service_worker.js`, `extension/sidebar/sidebar.js`, `vite.config.ts` (prerender des 4 routes, `autoStaticPathsDiscovery: false`), `.github/workflows/static-site.yml`.
+- Reconstruction de tous les paquets d'extension.
