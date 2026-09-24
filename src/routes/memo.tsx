@@ -1,8 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Search } from "lucide-react";
 
 export const Route = createFileRoute("/memo")({
   component: Memo,
@@ -14,6 +11,10 @@ export const Route = createFileRoute("/memo")({
         content:
           "Vocabulaire des 22 gestes reconnus par Orange Gesture Control, avec illustration animée et fonction d'appui long.",
       },
+      { property: "og:title", content: "Mémo des gestes — Orange Gesture Control" },
+      { property: "og:description", content: "Les 22 gestes Orange Gesture Control et leurs commandes, sur ordinateur et mobile." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
@@ -33,7 +34,6 @@ type Gesture = {
   custom?: "home" | "newtab"; // inline SVG instead of png/gif
   alt?: string;
   inactiveOnMobile?: boolean;
-  zoomImg?: string;
 };
 
 const GESTURES: Gesture[] = [
@@ -53,7 +53,7 @@ const GESTURES: Gesture[] = [
   { name: "left_right_arch",       title: "Onglet suivant",                longTitle: "Onglet suivant répété",        sequence: "URRDRD",       dot: "bottom-right", alt: "Onglet suivant = geste d’arc de cercle haut-droite, un appui long répète la commande" },
   { name: "top_down_arch",         title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bottom-right", note: "Sur lien : ouvre le lien", alt: "Nouvel onglet = geste bas suivi d’un arc de cercle haut-droite, comme un h" },
   { name: "alpha",                 title: "Fermer",                        longTitle: "Fermer répété",                sequence: "DRULDR",       dot: "right", alt: "Fermer = geste alpha, comme un x arrondi sans lever le doigt" },
-  { name: "magnifying_glass",      title: "Rechercher sur internet", zoomImg: "/img/magnifying_glass.gif",       longTitle: "Rechercher dans la page",      sequence: "URUURRDLDDL",  dot: "bottom-left", alt: "Rechercher sur internet = geste en forme de loupe, une diagonale haut-droite suivie d’un cercle en sens horaire, si sélection préalable, la recherche se fait sur cette sélection, si appui long en fin de geste la recherche s’effectue intrapage" },
+  { name: "magnifying_glass",      title: "Rechercher sur internet",       longTitle: "Rechercher dans la page",      sequence: "URUURRDLDDL",  dot: "bottom-left", alt: "Rechercher sur internet = geste en forme de loupe, une diagonale haut-droite suivie d’un cercle en sens horaire, si sélection préalable, la recherche se fait sur cette sélection, si appui long en fin de geste la recherche s’effectue intrapage" },
   { name: "left_right_heart",      title: "Ajouter aux favoris",           sequence: "LRULRD",                                                 dot: "right", alt: "Ajouter aux favoris = un trait vers la droite interrompu par un pic, qui revient sur la ligne et reprend vers la droite" },
   { name: "vertical_ribbon",       title: "Enregistrer sous…",             sequence: "DDRURUULL",                                              dot: "none", alt: "Enregistrer sous = un geste en forme d’hameçon qui descend verticalement et en fin de geste forme une boucle droite sur sa hampe" },
   { name: "element_next",          title: "Élément suivant",               longTitle: "Élément suivant répété",       sequence: "RD",           dot: "bottom-right", alt: "Aller à l’élément focusable suivant = trait horizontal puis vers le bas, un appui long répète" },

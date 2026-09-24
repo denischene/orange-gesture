@@ -10,8 +10,12 @@ export const Route = createFileRoute("/tutorials")({
       {
         name: "description",
         content:
-          "Installation et premiers pas avec Orange Gesture Control sur Firefox.",
+          "Installation et premiers pas avec Orange Gesture Control sur ordinateur et Firefox Android.",
       },
+      { property: "og:title", content: "Installation — Orange Gesture Control" },
+      { property: "og:description", content: "Installer Orange Gesture Control sur Firefox, Chrome, Edge, Opera, Brave et Firefox Android." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });

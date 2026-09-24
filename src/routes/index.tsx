@@ -10,8 +10,12 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Extension Firefox MV3 de commande gestuelle. Reconnaissance native compilée en WebAssembly, fallback JS, vocabulaire de 21 gestes.",
+          "Extension de commande gestuelle pour Firefox, Chrome, Edge, Opera et Brave, avec 22 gestes prêts à l'emploi.",
       },
+      { property: "og:title", content: "Orange Gesture Control — naviguez d'un geste" },
+      { property: "og:description", content: "Pilotez Firefox, Chrome, Edge, Opera et Brave grâce à 22 gestes de souris." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });

@@ -466,11 +466,11 @@
     lastMoveAt = performance.now();
     const seq = recognizer.sequence();
     if (!androidGestureClaimed && androidShouldClaim(seq)) androidGestureClaimed = true;
+    if (movedDuringPress && !longPressFired) scheduleLongPress();
     if (androidGestureClaimed) {
       try { e.preventDefault(); } catch {}
       if (settings.trails) window.OGC_Trails?.lineTo(androidLastX, androidLastY);
       if (settings.tooltips) window.OGC_Tooltips?.show(seq);
-      if (!longPressFired) scheduleLongPress();
     }
   }
 

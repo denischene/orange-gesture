@@ -10,6 +10,10 @@ export const Route = createFileRoute("/help")({
         content:
           "Comment utiliser Orange Gesture Control : tracé du geste, mode appui long, configuration, raccourcis disponibles.",
       },
+      { property: "og:title", content: "Aide — Orange Gesture Control" },
+      { property: "og:description", content: "Utiliser, configurer et personnaliser les gestes Orange Gesture Control." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
