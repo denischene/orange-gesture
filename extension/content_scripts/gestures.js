@@ -30,6 +30,8 @@
   let multiTouchReleased = false;
   let androidGestureClaimed = false;
   let androidHorizontalAtEdge = false;
+  let androidLastX = 0;
+  let androidLastY = 0;
   // Après libération par timer en clic-gauche sur Chromium, on pilote
   // nous-mêmes la sélection texte car le moteur natif a été inhibé au
   // mousedown initial et ne se rallume pas tout seul.
@@ -412,6 +414,8 @@
     downTarget = e.target;
     downX = e.clientX;
     downY = e.clientY;
+    androidLastX = e.clientX;
+    androidLastY = e.clientY;
     firstLinkHref = null;
     try { initialSelection = window.getSelection?.()?.toString?.() ?? ""; }
     catch { initialSelection = ""; }
@@ -446,11 +450,32 @@
       releaseToNative();
       return;
     }
-    if (!active || multiTouchReleased || !androidGestureClaimed) return;
-    try { e.preventDefault(); } catch {}
+    if (!active || multiTouchReleased || !e.touches?.length) return;
+    const touch = e.touches[0];
+    androidLastX = touch.clientX;
+    androidLastY = touch.clientY;
+    const dx = androidLastX - downX;
+    const dy = androidLastY - downY;
+    if (!movedDuringPress && dx * dx + dy * dy >= MOVE_THRESHOLD_PX * MOVE_THRESHOLD_PX) {
+      movedDuringPress = true;
+      if (idleReleaseTimer) { clearTimeout(idleReleaseTimer); idleReleaseTimer = null; }
+    }
+    points.push([androidLastX, androidLastY]);
+    recognizer.addPoint(androidLastX, androidLastY);
+    captureLinkAt(androidLastX, androidLastY, e.target);
+    lastMoveAt = performance.now();
+    const seq = recognizer.sequence();
+    if (!androidGestureClaimed && androidShouldClaim(seq)) androidGestureClaimed = true;
+    if (androidGestureClaimed) {
+      try { e.preventDefault(); } catch {}
+      if (settings.trails) window.OGC_Trails?.lineTo(androidLastX, androidLastY);
+      if (settings.tooltips) window.OGC_Tooltips?.show(seq);
+      if (!longPressFired) scheduleLongPress();
+    }
   }
 
   function onMove(e) {
+    if (IS_ANDROID && e.pointerType === "touch") return;
     if (!active) {
       if (manualSelect) {
         // Sur Chromium/Edge, le drag natif est bloqué par notre
@@ -661,8 +686,14 @@
   // Décideur tactile Android, branché en non-passif au plus tôt.
   if (IS_ANDROID) {
     window.addEventListener("touchmove", onAndroidTouchMove, { passive: false, capture: true });
-    window.addEventListener("touchend", stopLongPressRepeat, { passive: true, capture: true });
-    window.addEventListener("touchcancel", stopLongPressRepeat, { passive: true, capture: true });
+    window.addEventListener("touchend", (e) => {
+      if (active) onUp({ button: 0, clientX: androidLastX, clientY: androidLastY, preventDefault: () => e.preventDefault() });
+      else stopLongPressRepeat();
+    }, { passive: false, capture: true });
+    window.addEventListener("touchcancel", () => {
+      if (active && androidGestureClaimed) onUp({ button: 0, clientX: androidLastX, clientY: androidLastY, preventDefault: () => {} });
+      else stopLongPressRepeat();
+    }, { passive: true, capture: true });
   }
   // Permet au panneau d'aide injecté (iframe sidebar) de demander sa
   // fermeture via postMessage("ogc.closeHelpPanel", "*").
@@ -692,6 +723,7 @@
     }
   }, true);
   window.addEventListener("pointercancel", () => {
+    if (IS_ANDROID && active && !androidGestureClaimed) return;
     if (!active) { stopLongPressRepeat(); return; }
     active = false; clearTimers(); restoreUserSelect(); stopLongPressRepeat();
   }, true);

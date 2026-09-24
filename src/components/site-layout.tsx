@@ -68,7 +68,7 @@ export function SiteLayout() {
                   <nav className="flex flex-col gap-4 mt-8">
                     <NavLinks />
                     <div className="mt-4 pt-4 border-t border-border">
-                      <DownloadButton variant="default" className="w-full" />
+                      <DownloadButton variant="primary" className="w-full" />
                     </div>
                   </nav>
                 </SheetContent>

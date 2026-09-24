@@ -250,12 +250,10 @@ const ACTIONS = {
   "page.back":      async (tab) => navigateAndAdopt(tab, () => browser.tabs.goBack(tab.id)),
   "page.forward":   async (tab) => navigateForward(tab),
   "scroll.up":      async (tab, ctx) => {
-    if (IS_ANDROID) return contextualScroll(tab, ctx, "down");
-    return contextualScroll(tab, ctx, "up");
+    return contextualScroll(tab, ctx, "up", IS_ANDROID ? "down" : "up");
   },
   "scroll.down":    async (tab, ctx) => {
-    if (IS_ANDROID) return contextualScroll(tab, ctx, "up");
-    return contextualScroll(tab, ctx, "down");
+    return contextualScroll(tab, ctx, "down", IS_ANDROID ? "up" : "down");
   },
   "page.top":       async (tab) => scrollExtreme(tab, IS_ANDROID ? "bottom" : "top"),
   "page.bottom":    async (tab) => scrollExtreme(tab, IS_ANDROID ? "top" : "bottom"),
@@ -555,7 +553,7 @@ async function scrollExtreme(tab, where) {
   }).catch(() => {});
 }
 
-async function contextualScroll(tab, ctx, dir) {
+async function contextualScroll(tab, ctx, dir, scrollDir = dir) {
   if (dir === "up" && ctx?.selection) {
     return browser.scripting.executeScript({
       target: { tabId: tab.id },
@@ -588,7 +586,7 @@ async function contextualScroll(tab, ctx, dir) {
       }
     });
   }
-  const step = dir === "up" ? -300 : 300;
+  const step = scrollDir === "up" ? -300 : 300;
   return browser.scripting.executeScript({
     target: { tabId: tab.id, allFrames: true },
     func: (s) => {
