@@ -24,14 +24,12 @@
   const MOVE_THRESHOLD_PX = 5;
   let idleReleaseTimer = null;
   let idleReleased = false;
-  // Android : OGC capture systématiquement les gestes mono-doigt (un
-  // touch-action:none est posé dès le pointerdown). Le défilement / zoom
-  // natifs restent disponibles via la gestuelle multi-touch (deux doigts).
-  // Sans ce parti pris, tous les gestes commençant par un trait vertical
-  // (Aide, Haut/Bas de page, Onglets, Nouvel onglet, Fermer, Enregistrer,
-  // Rechercher, Valider…) étaient happés par le pull-to-refresh ou le
-  // scroll natif avant qu'OGC puisse les reconnaître.
+  // Android : les traits simples restent natifs. OGC ne capture le toucher
+  // qu'après un changement de direction, ou pour un trait horizontal arrivé
+  // au bord du contenu défilable.
   let multiTouchReleased = false;
+  let androidGestureClaimed = false;
+  let androidHorizontalAtEdge = false;
   // Après libération par timer en clic-gauche sur Chromium, on pilote
   // nous-mêmes la sélection texte car le moteur natif a été inhibé au
   // mousedown initial et ne se rallume pas tout seul.
@@ -261,6 +259,34 @@
     window.OGC_Tooltips?.hide();
   }
 
+  function horizontalScrollMargin(target, direction) {
+    let el = target instanceof Element ? target : null;
+    while (el && el !== document.documentElement) {
+      const cs = getComputedStyle(el);
+      if (/(auto|scroll|overlay)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 4) {
+        return direction === "L" ? el.scrollWidth - el.clientWidth - el.scrollLeft : el.scrollLeft;
+      }
+      el = el.parentElement;
+    }
+    const root = document.scrollingElement || document.documentElement;
+    return direction === "L"
+      ? Math.max(0, root.scrollWidth - root.clientWidth - root.scrollLeft)
+      : Math.max(0, root.scrollLeft);
+  }
+
+  function androidShouldClaim(seq) {
+    const tokens = seq.split("-").filter(Boolean);
+    if (tokens.length > 1) {
+      const first = tokens[0];
+      return tokens.some((token) => token !== first);
+    }
+    if (seq === "L" || seq === "R") {
+      androidHorizontalAtEdge = horizontalScrollMargin(downTarget, seq) < 80;
+      return androidHorizontalAtEdge;
+    }
+    return false;
+  }
+
   function scheduleLongPress() {
     clearTimers();
     longPressTimer = setTimeout(() => {
@@ -362,20 +388,9 @@
     } else if (e.button !== settings.button) {
       return;
     }
-    // Sur Android, on POSE immédiatement touch-action:none pour empêcher
-    // le pull-to-refresh et le scroll natif de happer le geste avant sa
-    // reconnaissance. Le scroll/zoom restent accessibles en posant un
-    // second doigt (multi-touch → onAndroidTouchMove libère OGC).
     multiTouchReleased = false;
-    if (IS_ANDROID && e.pointerType === "touch") {
-      try {
-        const de = document.documentElement;
-        if (de && !de.hasAttribute("data-ogc-prev-touchaction")) {
-          de.setAttribute("data-ogc-prev-touchaction", de.style.touchAction || "");
-          de.style.touchAction = "none";
-        }
-      } catch {}
-    }
+    androidGestureClaimed = false;
+    androidHorizontalAtEdge = false;
     // Stratégie : ne RIEN bloquer tant qu'aucun geste n'est détecté, afin
     // de préserver le comportement natif du clic (focus d'un champ, début
     // de sélection texte, menu contextuel) tant que l'utilisateur ne
@@ -422,9 +437,8 @@
     scheduleIdleRelease(e.button);
   }
 
-  // Android — bloque le comportement natif tant qu'OGC capture le geste.
-  // Si un second doigt arrive, on libère immédiatement : l'utilisateur
-  // demande explicitement un scroll/zoom natif à deux doigts.
+  // Android — laisse les traits simples au navigateur et ne bloque que les
+  // tracés complexes effectivement revendiqués par OGC.
   function onAndroidTouchMove(e) {
     if (!IS_ANDROID) return;
     if (e.touches && e.touches.length > 1 && !multiTouchReleased) {
@@ -432,7 +446,7 @@
       releaseToNative();
       return;
     }
-    if (!active || multiTouchReleased) return;
+    if (!active || multiTouchReleased || !androidGestureClaimed) return;
     try { e.preventDefault(); } catch {}
   }
 
@@ -503,7 +517,9 @@
     if (movedDuringPress) {
       // Pendant le tracé : on annule l'extension native de la sélection
       // et le drag d'images / liens.
-      try { e.preventDefault(); } catch {}
+      if (!IS_ANDROID || androidGestureClaimed) {
+        try { e.preventDefault(); } catch {}
+      }
       if (!initialSelection) {
         try {
           const s = window.getSelection?.();
@@ -523,6 +539,10 @@
     scheduleLongPress();
     if (settings.trails) window.OGC_Trails?.lineTo(e.clientX, e.clientY);
     const seq = recognizer.sequence();
+    if (IS_ANDROID && !androidGestureClaimed && androidShouldClaim(seq)) {
+      androidGestureClaimed = true;
+      suppressContext = true;
+    }
     if (settings.tooltips) window.OGC_Tooltips?.show(seq);
   }
 
@@ -563,7 +583,11 @@
       }
       return;
     }
-    if (previewSeq.length > 0) {
+    const androidContextAction =
+      (previewSeq === "U" && initialSelection.trim().length > 0) ||
+      (previewSeq === "D" && initialEditable);
+    const androidMayRun = !IS_ANDROID || longPressFired || androidGestureClaimed || androidContextAction;
+    if (previewSeq.length > 0 && androidMayRun) {
       suppressContext = true;
       e.preventDefault();
       if (longPressFired) return;
@@ -637,6 +661,8 @@
   // Décideur tactile Android, branché en non-passif au plus tôt.
   if (IS_ANDROID) {
     window.addEventListener("touchmove", onAndroidTouchMove, { passive: false, capture: true });
+    window.addEventListener("touchend", stopLongPressRepeat, { passive: true, capture: true });
+    window.addEventListener("touchcancel", stopLongPressRepeat, { passive: true, capture: true });
   }
   // Permet au panneau d'aide injecté (iframe sidebar) de demander sa
   // fermeture via postMessage("ogc.closeHelpPanel", "*").

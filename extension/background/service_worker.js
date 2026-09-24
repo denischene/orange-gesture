@@ -34,6 +34,7 @@ const IS_FIREFOX = !!browser.runtime?.getBrowserInfo;
 // au plus tôt pour gates synchrones.
 let IS_ANDROID = false;
 browser.runtime.getPlatformInfo?.().then((p) => { IS_ANDROID = p?.os === "android"; }).catch(() => {});
+const HOME_RETURN_URL = new Map();
 function browserHomeUrl() {
   if (IS_FIREFOX) return "about:home";
   // Chromium (Chrome, Edge, Opera, Brave) : la page d'accueil interne
@@ -247,17 +248,17 @@ function findVocab(seq) {
 /* ---------- actions ---------- */
 const ACTIONS = {
   "page.back":      async (tab) => navigateAndAdopt(tab, () => browser.tabs.goBack(tab.id)),
-  "page.forward":   async (tab) => navigateAndAdopt(tab, () => browser.tabs.goForward(tab.id)),
+  "page.forward":   async (tab) => navigateForward(tab),
   "scroll.up":      async (tab, ctx) => {
-    if (IS_ANDROID) return androidUnavailable(tab);
+    if (IS_ANDROID) return contextualScroll(tab, ctx, "down");
     return contextualScroll(tab, ctx, "up");
   },
   "scroll.down":    async (tab, ctx) => {
-    if (IS_ANDROID) return androidUnavailable(tab);
+    if (IS_ANDROID) return contextualScroll(tab, ctx, "up");
     return contextualScroll(tab, ctx, "down");
   },
-  "page.top":       async (tab) => scrollExtreme(tab, "top"),
-  "page.bottom":    async (tab) => scrollExtreme(tab, "bottom"),
+  "page.top":       async (tab) => scrollExtreme(tab, IS_ANDROID ? "bottom" : "top"),
+  "page.bottom":    async (tab) => scrollExtreme(tab, IS_ANDROID ? "top" : "bottom"),
   "site.home":      async (tab, ctx) => {
     if (ctx?.longPress) {
       let url = browserHomeUrl();
@@ -268,6 +269,7 @@ const ACTIONS = {
       try { return await browser.tabs.update(tab.id, { url }); }
       catch { return browser.tabs.create({ url }); }
     }
+    if (tab.id != null && tab.url) HOME_RETURN_URL.set(tab.id, tab.url);
     return browser.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => { window.location.href = window.location.origin + "/"; }
@@ -501,6 +503,25 @@ async function navigateAndAdopt(tab, navFn) {
   return { pressTabId: tab.id };
 }
 
+async function navigateForward(tab) {
+  const before = tab.url || "";
+  const result = await navigateAndAdopt(tab, () => browser.tabs.goForward(tab.id));
+  let after = before;
+  try { after = (await browser.tabs.get(tab.id))?.url || before; } catch {}
+  if (result !== false && after !== before) {
+    HOME_RETURN_URL.delete(tab.id);
+    return result;
+  }
+  const remembered = HOME_RETURN_URL.get(tab.id);
+  if (!remembered) return result;
+  HOME_RETURN_URL.delete(tab.id);
+  try {
+    await browser.tabs.update(tab.id, { url: remembered });
+    await waitTabComplete(tab.id);
+    return { pressTabId: tab.id };
+  } catch { return false; }
+}
+
 async function scrollExtreme(tab, where) {
   // allFrames: true permet de défiler aussi à l'intérieur des iframes
   // (lecteur PDF SharePoint, pdf.js embarqué, etc.). On vise au passage
@@ -647,7 +668,7 @@ async function cycleWindowState(delta) {
  * REPEAT_MS puis on demande à l'onglet actif si l'utilisateur maintient
  * toujours l'appui. Si oui, on répète. Sinon, on s'arrête.
  */
-const REPEAT_MS = 1000;
+const REPEAT_MS = 650;
 let activeRepeat = null;
 function stopRepeat() {
   if (activeRepeat) {
@@ -681,12 +702,14 @@ function scheduleRepeat(entry, handler, originTab, ctx, token) {
   activeRepeat.timer = setTimeout(async () => {
     if (!activeRepeat || activeRepeat.token !== token) return;
     const target = isNavigationRepeatAction(entry.action) ? await getCurrentTab(originTab) : originTab;
+    if (!activeRepeat || activeRepeat.token !== token) return;
     if (!target) { stopRepeat(); return; }
     const stillPressing = await pingLongPress(activeRepeat.pressTabId);
     if (!stillPressing) { stopRepeat(); return; }
     let cont = true;
     try {
       const r = await handler(target, ctx);
+      if (!activeRepeat || activeRepeat.token !== token) return;
       if (r === false) cont = false;
       else if (r?.pressTabId && activeRepeat?.token === token) activeRepeat.pressTabId = r.pressTabId;
     } catch (err) { console.warn("[OGC] repeat failed", err); }

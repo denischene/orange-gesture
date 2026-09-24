@@ -7,6 +7,7 @@
     "dev": "vite dev",
     "prebuild": "node scripts/build-gesture-exports.mjs",
     "build": "vite build",
+    "package:site": "node scripts/package-static-site.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

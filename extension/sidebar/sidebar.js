@@ -23,6 +23,20 @@ const ITEMS = [
   { img: "element_prev",           lbl: "élt prcdt." },
   { img: "validate",               lbl: "valider" }
 ];
+const IS_ANDROID = !!(globalThis.OGC && globalThis.OGC.isAndroid);
+if (IS_ANDROID) {
+  const byImage = Object.fromEntries(ITEMS.map((item) => [item.img, item]));
+  [byImage.top_bottom.img, byImage.bottom_top.img] = [byImage.bottom_top.img, byImage.top_bottom.img];
+  [byImage.top_bottom.lbl, byImage.bottom_top.lbl] = ["monter", "descendre"];
+  [byImage.down_right_angle.img, byImage.up_right_angle.img] = [byImage.up_right_angle.img, byImage.down_right_angle.img];
+  [byImage.down_right_angle.lbl, byImage.up_right_angle.lbl] = ["haut page", "bas page"];
+  byImage.clockwise_circle.img = "zoomer_mobile";
+  byImage.clockwise_circle.lbl = "zoomer (natif)";
+  byImage.anticlockwise_circle.img = "dezoomer_mobile";
+  byImage.anticlockwise_circle.lbl = "dézoomer (natif)";
+  byImage.bottom_left_top_right.inactive = true;
+  byImage.top_right_bottom_left.inactive = true;
+}
 const grid = document.getElementById("grid");
 const preview = document.getElementById("preview");
 let activeCell = null;
@@ -60,6 +74,10 @@ for (const it of ITEMS) {
   c.type = "button";
   c.className = "cell";
   c.setAttribute("aria-label", it.lbl);
+  if (it.inactive) {
+    c.classList.add("inactive");
+    c.setAttribute("aria-label", it.lbl + " — inactif sur mobile");
+  }
   const img = document.createElement("img");
   img.src = "../img/" + it.img + ".png";
   img.alt = "";
@@ -69,6 +87,12 @@ for (const it of ITEMS) {
   l.textContent = it.lbl;
   c.appendChild(img);
   c.appendChild(l);
+  if (it.inactive) {
+    const status = document.createElement("span");
+    status.className = "status";
+    status.textContent = "Inactif sur mobile";
+    c.appendChild(status);
+  }
   c.addEventListener("click", () => {
     if (activeCell) activeCell.classList.remove("active");
     c.classList.add("active");
