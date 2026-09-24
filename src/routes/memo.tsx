@@ -11,6 +11,10 @@ export const Route = createFileRoute("/memo")({
         content:
           "Vocabulaire des 22 gestes reconnus par Orange Gesture Control, avec illustration animée et fonction d'appui long.",
       },
+      { property: "og:title", content: "Mémo des gestes — Orange Gesture Control" },
+      { property: "og:description", content: "Les 22 gestes Orange Gesture Control et leurs commandes, sur ordinateur et mobile." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
@@ -29,6 +33,7 @@ type Gesture = {
   note?: string;
   custom?: "home" | "newtab"; // inline SVG instead of png/gif
   alt?: string;
+  inactiveOnMobile?: boolean;
 };
 
 const GESTURES: Gesture[] = [
@@ -42,8 +47,8 @@ const GESTURES: Gesture[] = [
   { name: "right_left_triangle",   title: "Page d'accueil du site",        longTitle: "Page d'accueil du navigateur", sequence: "LURDR",        dot: "bottom-right", alt: "Aller à la page d’accueil du site web = trait horizontal vers la gauche puis diagonale pour faire un retour en forme de triangle, un appui long fait un retour à la page d’accueil du navigateur" },
   { name: "clockwise_circle",      title: "Zoomer",                        longTitle: "Zoom progressif (+10%)",       sequence: "DRDDLLLUURUR", dot: "top-right", alt: "Zoomer = faire un cercle vers le bas et la gauche–sens horaire, un appui long répète le zoom" },
   { name: "anticlockwise_circle",  title: "Dézoomer",                      longTitle: "Dézoom progressif (−10%)",     sequence: "LDLDDRRULUUL", dot: "top-left", alt: "Dézoomer = faire un cercle vers le bas et la droite–sens anti-horaire, un appui long répète le dézoom" },
-  { name: "bottom_left_top_right", title: "Agrandir fenêtre",              longTitle: "État fenêtre suivant",         sequence: "UR",           dot: "top-right", alt: "Agrandir la fenêtre = geste diagonal vers le haut-droite, un appui long répète la commande" },
-  { name: "top_right_bottom_left", title: "Réduire fenêtre",               longTitle: "État fenêtre précédent",       sequence: "DL",           dot: "bottom-left", alt: "Réduire la fenêtre = geste diagonal vers le bas-gauche, un appui long répète la commande" },
+  { name: "bottom_left_top_right", title: "Agrandir fenêtre",              longTitle: "État fenêtre suivant",         sequence: "UR",           dot: "top-right", inactiveOnMobile: true, alt: "Agrandir la fenêtre = geste diagonal vers le haut-droite, un appui long répète la commande" },
+  { name: "top_right_bottom_left", title: "Réduire fenêtre",               longTitle: "État fenêtre précédent",       sequence: "DL",           dot: "bottom-left", inactiveOnMobile: true, alt: "Réduire la fenêtre = geste diagonal vers le bas-gauche, un appui long répète la commande" },
   { name: "right_left_arch",       title: "Onglet précédent",              longTitle: "Onglet précédent répété",      sequence: "DDLLULU",      dot: "bottom-left", alt: "Onglet précédent = geste d’arc de cercle haut-gauche, un appui long répète la commande" },
   { name: "left_right_arch",       title: "Onglet suivant",                longTitle: "Onglet suivant répété",        sequence: "URRDRD",       dot: "bottom-right", alt: "Onglet suivant = geste d’arc de cercle haut-droite, un appui long répète la commande" },
   { name: "top_down_arch",         title: "Nouvel onglet",                 sequence: "DUURRDRD",                                               dot: "bottom-right", note: "Sur lien : ouvre le lien", alt: "Nouvel onglet = geste bas suivi d’un arc de cercle haut-droite, comme un h" },
@@ -141,7 +146,18 @@ function NewTabIcon({ animated }: { animated: boolean }) {
   );
 }
 
-function GestureCard({ g }: { g: Gesture }) {
+function mobileGesture(g: Gesture): Gesture {
+  if (g.name === "top_bottom") return { ...g, name: "bottom_top", title: "Monter", longTitle: "Monter (répété)", note: "Trait simple : défilement tactile natif · Dans un champ : Coller" };
+  if (g.name === "bottom_top") return { ...g, name: "top_bottom", title: "Descendre", longTitle: "Descendre (répété)", note: "Trait simple : défilement tactile natif · Sur sélection : Copier" };
+  if (g.name === "down_right_angle") return { ...g, name: "up_right_angle", title: "Haut de page" };
+  if (g.name === "up_right_angle") return { ...g, name: "down_right_angle", title: "Bas de page" };
+  if (g.name === "clockwise_circle") return { ...g, name: "zoomer_mobile", longTitle: undefined, dot: "none", note: "Geste natif du navigateur" };
+  if (g.name === "anticlockwise_circle") return { ...g, name: "dezoomer_mobile", longTitle: undefined, dot: "none", note: "Geste natif du navigateur" };
+  return g;
+}
+
+function GestureCard({ gesture, isMobile }: { gesture: Gesture; isMobile: boolean }) {
+  const g = isMobile ? mobileGesture(gesture) : gesture;
   // `playKey` est incrémenté quand l'utilisateur active la vignette au
   // clavier (Entrée / Espace) — il sert de cache-buster sur l'URL du GIF
   // pour forcer le navigateur à relancer l'animation depuis son premier
@@ -176,10 +192,10 @@ function GestureCard({ g }: { g: Gesture }) {
     <figure
       ref={figRef as React.RefObject<HTMLDivElement>}
       tabIndex={0}
-      aria-label={g.alt || g.title}
+      aria-label={`${g.alt || g.title}${isMobile && g.inactiveOnMobile ? " — inactif sur mobile" : ""}`}
       onKeyDown={handleKeyDown}
       onClick={activate}
-      className={`ogc-card group ${activeCls} rounded-xl border border-border bg-card p-4 flex flex-col items-center text-center hover:shadow-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+      className={`ogc-card group ${activeCls} ${isMobile && g.inactiveOnMobile ? "ogc-card-mobile-inactive" : ""} rounded-xl border border-border bg-card p-4 flex flex-col items-center text-center hover:shadow-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
     >
       <div className="relative h-28 w-28 text-foreground">
         {g.custom === "home" ? (
@@ -238,12 +254,23 @@ function GestureCard({ g }: { g: Gesture }) {
       {g.note && (
         <p className="mt-1 text-[10px] text-muted-foreground italic">{g.note}</p>
       )}
+      {isMobile && g.inactiveOnMobile && (
+        <p className="mt-1 text-[10px] font-medium text-muted-foreground">Inactif sur mobile</p>
+      )}
       <code className="mt-1 text-[10px] text-muted-foreground">{g.sequence}</code>
     </figure>
   );
 }
 
 function Memo() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(pointer: coarse) and (max-width: 767px)");
+    const update = () => setIsMobile(query.matches);
+    update();
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
       <header className="mb-8">
@@ -251,7 +278,7 @@ function Memo() {
           Mémo des gestes
         </h1>
         <p className="mt-2 text-muted-foreground max-w-2xl">
-          Survolez une vignette pour voir l'animation.
+          {isMobile ? "Touchez une vignette pour voir l’animation." : "Survolez une vignette pour voir l’animation."}
           <br />
           Les gestes avec un point orange ont une seconde fonction activable
           par un appui long en fin de geste.
@@ -259,7 +286,7 @@ function Memo() {
       </header>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {GESTURES.map((g) => (
-          <GestureCard key={g.name} g={g} />
+          <GestureCard key={g.name} gesture={g} isMobile={isMobile} />
         ))}
       </div>
     </section>

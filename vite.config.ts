@@ -11,5 +11,12 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
+    pages: [
+      { path: "/" },
+      { path: "/memo" },
+      { path: "/help" },
+      { path: "/tutorials" },
+    ],
+    prerender: { enabled: true, autoStaticPathsDiscovery: false },
   },
 });

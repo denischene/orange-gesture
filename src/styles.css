@@ -236,6 +236,10 @@ a.ogc-btn-link:active {
 .dark .ogc-gesture-img {
   filter: invert(1) hue-rotate(180deg);
 }
+.ogc-card-mobile-inactive {
+  opacity: 0.52;
+  filter: grayscale(1);
+}
 /* The brutal hover override above forces black bg / white text on every button.
  * Re-allow the theme toggle to use its own tokens so the icon stays visible. */
 button.ogc-theme-toggle:hover {
