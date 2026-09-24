@@ -4,8 +4,7 @@
 - Détection mobile (tactile + largeur < 768 px, via `pointer: coarse`) côté page.
 - Vignettes grisées + mention « Inactif sur mobile » : Agrandir fenêtre, Réduire fenêtre.
 - Vignettes non grisées mais libellés ajustés :
-  - Descendre : seul « Dans un champ : Coller » actif ; « Descendre » et « Descendre (répété) » barrés/indiqués inactifs.
-  - Monter : seul « Sur sélection : Copier » actif ; idem.
+  - Descendre / Monter : pictos et libellés intervertis sur mobile, car le geste tactile déplace naturellement la page dans le sens inverse. Les traits simples utilisent le défilement tactile natif ; les appuis longs répétés restent des commandes OGC, elles aussi inversées. « Descendre dans un champ : Coller » et « Monter sur sélection : Copier » restent actifs.
   - Haut de page / Bas de page : pictos intervertis et libellés inversés (le geste montant mène en bas, le geste descendant mène en haut — logique « on tire la page »).
   - Zoomer / Dézoomer : nouveaux pictos (pincement, d'après les images fournies), redessinés en noir épais comme les autres, sans point orange, avec animation curseur ; mention « geste natif du navigateur ».
 - Même adaptation dans le panneau Aide gestes de la version Android de l'extension.
