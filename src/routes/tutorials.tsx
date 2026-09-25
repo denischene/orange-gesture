@@ -51,23 +51,37 @@ const STEPS = [
           <em>Charger un module complémentaire temporaire</em>, puis
           sélectionnez le fichier <code>ogc.xpi</code>.
         </div>
-        <div>
-          <BrowserIcon name="firefox-android" />
-          <strong>Firefox Android (beta)</strong> : installez{" "}
-          <a
-            href="https://play.google.com/store/apps/details?id=org.mozilla.fenix"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline"
-          >
-            Firefox Nightly
-          </a>{" "}
-          pour Android, ouvrez <em>Paramètres → À propos de Firefox
-          Nightly</em>, tapez 5 fois sur le logo pour activer le menu{" "}
-          <em>Débogage</em>. Dans <em>Paramètres → Modules complémentaires →
-          Collection personnalisée</em>, saisissez la collection contenant
-          OGC, puis installez <code>ogc-android.xpi</code>. Sur Firefox
-          stable, l'extension doit être publiée sur AMO (à venir).
+        <div className="flex flex-col sm:flex-row gap-4">
+          <p className="flex-1">
+            <BrowserIcon name="firefox-android" />
+            <strong>Firefox Android (beta)</strong> : installez{" "}
+            <a
+              href="https://play.google.com/store/apps/details?id=org.mozilla.fenix"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              Firefox Nightly
+            </a>{" "}
+            pour Android, ouvrez <em>Paramètres → À propos de Firefox
+            Nightly</em>, tapez 5 fois sur le logo pour activer le menu{" "}
+            <em>Débogage</em>. Dans <em>Paramètres → Modules complémentaires →
+            Collection personnalisée</em>, saisissez la collection contenant
+            OGC, puis installez <code>ogc-android.xpi</code>. Sur Firefox
+            stable, l'extension doit être publiée sur AMO (à venir).
+          </p>
+          <div className="shrink-0 flex flex-col items-center gap-1">
+            <img
+              src={qrAndroid}
+              alt="QR code vers le téléchargement du fichier ogc-android.xpi"
+              className="h-40 w-40 rounded-md border border-border p-1 bg-white"
+              width={160}
+              height={160}
+            />
+            <span className="text-xs text-muted-foreground text-center">
+              Scannez pour télécharger sur votre mobile
+            </span>
+          </div>
         </div>
         <div>
           <BrowserIcon name="edge" />
