@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { DownloadButton } from "@/components/download-button";
 import { BrowserIcon } from "@/components/browser-icon";
+import qrAndroid from "@/assets/qr-android.png";
 
 export const Route = createFileRoute("/tutorials")({
   component: Tutorials,
