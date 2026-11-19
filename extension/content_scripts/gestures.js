@@ -302,7 +302,7 @@
       browser.runtime.sendMessage({
         type: "ogc.stroke",
         points: points.slice(),
-        actionHint: window.OGC_VOCABULARY?.[seq] || null,
+        sequence: seq,
         context: { ...buildContext(), longPress: true }
       });
     }, LONG_PRESS_MS);
@@ -635,7 +635,7 @@
       browser.runtime.sendMessage({
         type: "ogc.stroke",
         points: points.slice(),
-        actionHint: window.OGC_VOCABULARY?.[previewSeq] || null,
+        sequence: previewSeq,
         context: { ...buildContext(), longPress: false }
       });
       if (savedRanges) {

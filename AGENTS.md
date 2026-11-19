@@ -1,0 +1,1 @@
+- Gesture recognition uses one engine: extension/lib/recognizer.js (tokenizer, run in page) + extension/lib/matcher.js (exact/custom/fuzzy matching from gestures.json); no WASM. Why: one behaviour on every browser/platform; guard with `node tests/recognition.test.mjs`.

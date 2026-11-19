@@ -22,12 +22,12 @@ export const Route = createFileRoute("/")({
 
 const FEATURES = [
   {
-    title: "Moteur natif WebAssembly",
-    body: "Le tokeniseur 8 directions historique, porté du C++ et compilé via Emscripten, est chargé dans le service worker.",
+    title: "Un moteur unique",
+    body: "Le même moteur en 8 directions reconnaît vos gestes sur tous les navigateurs, sous Windows, Mac et Android.",
   },
   {
-    title: "Fallback JavaScript",
-    body: "Si le module WASM ne se charge pas, un reconnaisseur JS identique prend le relais sans perte de fonctionnalité.",
+    title: "Tolérant aux tracés imparfaits",
+    body: "Un geste approximatif est rapproché du geste le plus proche, sans confondre angle droit et diagonale.",
   },
   {
     title: "Manifest V3",

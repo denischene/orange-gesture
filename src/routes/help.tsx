@@ -76,12 +76,11 @@ function Help() {
         </p>
       </Section>
 
-      <Section title="Reconnaissance native + fallback">
+      <Section title="Un moteur de reconnaissance unique">
         <p className="text-muted-foreground">
-          Le service worker charge un module WebAssembly compilé à partir du
-          code C++ historique. Si le chargement échoue (mémoire faible,
-          fingerprinting bloqué, MIME type invalide), un reconnaisseur
-          JavaScript équivalent prend le relais sans interruption de service.
+          Un seul moteur reconnaît les gestes, sur tous les navigateurs et
+          toutes les plateformes. Il découpe le tracé en 8 directions, puis le
+          compare à la liste des gestes en tolérant les tracés imparfaits.
         </p>
       </Section>
 

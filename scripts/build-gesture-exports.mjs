@@ -2,7 +2,6 @@
 /**
  * Build artifacts from the single source of truth: extension/data/gestures.json.
  * Outputs:
- *   - extension/native/ogc_vocab.h        (embedded in WASM build)
  *   - public/ogc-gestures.json            (downloadable, pretty-printed)
  *   - public/ogc-gestures.rdf             (downloadable, legacy OGC RDF/XML)
  *
@@ -113,34 +112,11 @@ const headerLines = [
   `static const uint32_t OGC_ACTIONS_LEN = ${actions.length};`,
   "",
 ];
-writeFileSync(resolve(ROOT, "extension/native/ogc_vocab.h"), headerLines.join("\n"));
 
 console.log(
   `[gestures] ${vocab.gestures.length} gestures, ${entries.length} sequences ` +
-  `→ public/ogc-gestures.{json,rdf} + extension/native/ogc_vocab.h`
+  `→ public/ogc-gestures.{json,rdf}`
 );
-
-/* ---------- extension/lib/vocabulary.js (legacy global, for content script) ---------- */
-const vocabPairs = [];
-for (const g of vocab.gestures) {
-  vocabPairs.push(`    ${JSON.stringify(dashify(g.canonical))}: ${JSON.stringify(g.id)}`);
-  for (const a of g.aliases || []) {
-    vocabPairs.push(`    ${JSON.stringify(dashify(a))}: ${JSON.stringify(g.id)}`);
-  }
-}
-const vocabJs = [
-  "/* AUTO-GÉNÉRÉ par scripts/build-gesture-exports.mjs — ne pas éditer.",
-  " * Source : extension/data/gestures.json",
-  " * Vocabulaire (séquence -> action) exposé en global pour le content script. */",
-  "(function (root) {",
-  "  const OGC_VOCABULARY = {",
-  vocabPairs.join(",\n"),
-  "  };",
-  "  root.OGC_VOCABULARY = OGC_VOCABULARY;",
-  "})(typeof window !== \"undefined\" ? window : globalThis);",
-  "",
-].join("\n");
-writeFileSync(resolve(ROOT, "extension/lib/vocabulary.js"), vocabJs);
 
 /* ---------- extension/data/gestures.data.js (classic global, for service worker) ---------- */
 // On expose la donnée via globalThis pour rester chargeable à la fois en
