@@ -10,6 +10,9 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
+    // Ne pas rediriger /memo/ -> /memo : le prerender statique demande la
+    // forme avec slash final et tournerait en boucle de redirections.
+    trailingSlash: "preserve",
   });
 
   return router;

@@ -13,5 +13,7 @@ if (!client) {
 }
 mkdirSync(dirname(output), { recursive: true });
 rmSync(output, { force: true });
+// public/ est copié dans le build : ne pas embarquer le zip dans lui-même.
+rmSync(resolve(client, "ogc-site-static.zip"), { force: true });
 execFileSync("zip", ["-qr", output, "."], { cwd: client, stdio: "inherit" });
 console.log(`[site] wrote ${output}`);
